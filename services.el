@@ -17,6 +17,7 @@
       (let ((map (make-sparse-keymap)))
         (define-key map [tab] 'services-next-line)
         (define-key map [backtab] 'services-prev-line)
+        (define-key map (kbd "g") 'services-refresh-dashboard)
         (define-key map (kbd "n") 'services-next-line)
         (define-key map (kbd "p") 'services-prev-line)
         (define-key map (kbd "RET") 'services-show-current)
@@ -37,8 +38,19 @@
 
 ;; defuns
 (defun services--list-all ()
-  "Return a list of services on the system"
-  (split-string (shell-command-to-string (alist-get 'list services-commands-alist)) "[\n\r]+"))
+  "Return an alist of services on the system.
+  The car of each cons pair is the service name.
+  The cdr is a plist of extended properties (e.g. enabled/disabled status)."
+  (seq-map 'services--get-line-properties
+           (split-string (shell-command-to-string (alist-get 'list services-commands-alist))
+                         "[\n\r]+")))
+
+(defun services--get-line-properties (line)
+  "Return a cons pair of service name and plist of extended properties."
+  (let ((parts (split-string line)))
+    (list (car parts)
+          (list :status (cadr parts)
+                :original-line line))))
 
 (defun services-next-line ()
   "Move the cursor the next line"
@@ -76,7 +88,7 @@
   (linum-mode -1)
   (page-break-lines-mode 1)
   (whitespace-mode -1)
-  (setq buffer-read-only t
+  (setq buffer-read-only nil
         truncate-lines t))
 
 (defun services--header ()
@@ -87,18 +99,31 @@
 (defun services--header-lines ()
   (length (services--header)))
 
+(defun services-refresh-dashboard ()
+  (interactive)
+  ;; clean up
+  (save-excursion
+    (delete-region (point-min) (point-max))
+    ;; insert header
+    (dolist (header-line (services--header))
+      (insert (format "%s\n" header-line)))
+    ;; insert contents
+    (setq services-list (services--list-all))
+    (dolist (service-line services-list)
+      (when (car service-line)
+        (insert
+         (format "[%s]\t\t%s\n"
+                 (plist-get (cadr service-line) :status)
+                 (car service-line)))))))
+
 (defun services ()
   (interactive)
   (let ((dashboard-buffer (get-buffer-create services--dashboard-buffer-name)))
     (with-current-buffer dashboard-buffer
       (display-buffer-pop-up-window dashboard-buffer nil)
       (switch-to-buffer-other-window dashboard-buffer)
-      (save-excursion
-        (delete-region (point-min) (point-max))
-        (dolist (header-line (services--header)) (insert header-line))
-        (setq services-list (services--list-all))
-        (dolist (service-line (services-list)) (insert service-line))
-      (services-mode)))))
+      (services-mode)
+      (services-refresh-dashboard))))
 
 ;; evil
 (when (and (boundp 'evil-emacs-state-modes)
