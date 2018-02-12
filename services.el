@@ -7,7 +7,6 @@
 (defconst services--error-buffer-name "*services-error*")
 
 (defvar services--commands-alist nil "Services commands alist")
-(defvar services--commands-alist-systemd nil "Services commands alist for systemd")
 
 (defvar services-mode-map nil "Keymap for services mode")
 
@@ -24,48 +23,14 @@
         (define-key map (kbd "RET") 'services-status-current)
         (define-key map (kbd "s") 'services-start-current)
         (define-key map (kbd "S") 'services-stop-current)
+        (define-key map (kbd "R") 'services-restart-current)
+        (define-key map (kbd "r") 'services-reload-current)
         map))
-
-(setq services--commands-alist-systemd
-      '((list . services--systemd-list-all)
-        (pretty-print . services--systemd-pretty-print)
-        (show . (lambda (name) (format "systemctl show %s" name)))
-        (status . (lambda (name) (format "systemctl status %s" name)))
-        (start . (lambda (name) (format "systemctl start %s" name)))
-        (stop . (lambda (name) (format "systemctl stop %s" name)))
-        (restart . (lambda (name) (format "systemctl restart %s" name)))))
-
-(setq services--commands-alist services--commands-alist-systemd)
 
 ;; defuns
 (defun split-lines (string)
   "Split STRING Into list of lines"
   (split-string string "[\n\r]+" t))
-
-(defun services--systemd-parse-list (services-list)
-  (seq-map
-   (lambda (line)
-     (let ((parts (split-string line)))
-       (cons
-        (replace-regexp-in-string "\.service" "" (car parts))
-        (list :status (cadr parts)
-              :original-line line))))
-   services-list))
-
-(defun services--systemd-list-all ()
-  "Return an alist of services on a systemd system.
-  The car of each cons pair is the service name.
-  The cdr is a plist of extended properties (e.g. enabled/disabled status)."
-  (thread-last  "systemctl list-unit-files --type=service --no-legend"
-    (shell-command-to-string)
-    (split-lines)
-    (services--systemd-parse-list)))
-
-(defun services--systemd-pretty-print (service)
-  "Produce a formatted string describing a service"
-  (let ((name (car service))
-        (props (cdr service)))
-    (format "%s\t\t[%s]\n" name (plist-get props :status))))
 
 (defun services--list-all ()
   (funcall (alist-get 'list services--commands-alist)))
@@ -102,6 +67,14 @@
 (defun services-stop-current ()
   (interactive)
   (services--run 'stop))
+
+(defun services-restart-current ()
+  (interactive)
+  (services--run 'restart))
+
+(defun services-reload-current ()
+  (interactive)
+  (services--run 'reload))
 
 (defun services--run (command)
   (let ((service-name (car (services--current)))
@@ -149,6 +122,9 @@
       (switch-to-buffer-other-window dashboard-buffer)
       (services-mode)
       (services-refresh-dashboard))))
+
+;; Start by supporting systemd
+(load-file "./services-systemd.el")
 
 ;; evil
 (when (and (boundp 'evil-emacs-state-modes)
