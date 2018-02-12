@@ -1,11 +1,12 @@
 ;; -*- lexical-binding: t -*-
+(require 'seq)
 
 ;; declarations
 (defconst services--dashboard-buffer-name "*services*")
 (defconst services--output-buffer-name "*services-output*")
 (defconst services--error-buffer-name "*services-error*")
 
-(defvar services-commands-alist nil "Services commands alist")
+(defvar services--commands-alist nil "Services commands alist")
 (defvar services--commands-alist-systemd nil "Services commands alist for systemd")
 
 (defvar services-mode-map nil "Keymap for services mode")
@@ -27,30 +28,41 @@
         map))
 
 (setq services--commands-alist-systemd
-      '((list . "systemctl list-unit-files --type=service --no-legend")
+      '((list . services--systemd-list-all)
         (show . (lambda (name) (format "systemctl show %s" name)))
         (status . (lambda (name) (format "systemctl status %s" name)))
         (start . (lambda (name) (format "systemctl start %s" name)))
         (stop . (lambda (name) (format "systemctl stop %s" name)))
         (restart . (lambda (name) (format "systemctl restart %s" name)))))
 
-(setq services-commands-alist services--commands-alist-systemd)
+(setq services--commands-alist services--commands-alist-systemd)
 
 ;; defuns
-(defun services--list-all ()
-  "Return an alist of services on the system.
+(defun split-lines (string)
+  "Split STRING Into list of lines"
+  (split-string string "[\n\r]+" t))
+
+(defun services--systemd-parse-list (services-list)
+  (seq-map
+   (lambda (line)
+     (let ((parts (split-string line)))
+       (cons
+        (replace-regexp-in-string "\.service" "" (car parts))
+        (list :status (cadr parts)
+              :original-line line))))
+   services-list))
+
+(defun services--systemd-list-all ()
+  "Return an alist of services on a systemd system.
   The car of each cons pair is the service name.
   The cdr is a plist of extended properties (e.g. enabled/disabled status)."
-  (seq-map 'services--get-line-properties
-           (split-string (shell-command-to-string (alist-get 'list services-commands-alist))
-                         "[\n\r]+")))
+  (thread-last  "systemctl list-unit-files --type=service --no-legend"
+    (shell-command-to-string)
+    (split-lines)
+    (services--systemd-parse-list)))
 
-(defun services--get-line-properties (line)
-  "Return a cons pair of service name and plist of extended properties."
-  (let ((parts (split-string line)))
-    (list (car parts)
-          (list :status (cadr parts)
-                :original-line line))))
+(defun services--list-all ()
+  (funcall (alist-get 'list services--commands-alist)))
 
 (defun services-next-line ()
   "Move the cursor the next line"
@@ -63,14 +75,13 @@
   (beginning-of-line 0))
 
 (defun services--current ()
-  (interactive)
   (let ((index (- (line-number-at-pos) (services--header-lines) 1)))
     (nth index services-list)))
 
 (defun services-show-current ()
   (interactive)
   (services-run
-   (apply (alist-get 'show services-commands-alist) (services--current))))
+   (funcall (alist-get 'show services--commands-alist) (car (services--current)))))
 
 (defun services-status-current ())
 (defun services-start-current ())
@@ -110,11 +121,9 @@
     ;; insert contents
     (setq services-list (services--list-all))
     (dolist (service-line services-list)
-      (when (car service-line)
-        (insert
-         (format "[%s]\t\t%s\n"
-                 (plist-get (cadr service-line) :status)
-                 (car service-line)))))))
+      (let ((name (car service-line))
+            (props (cdr service-line)))
+        (insert (format "%s\t\t[%s]\n" name (plist-get props :status)))))))
 
 (defun services ()
   (interactive)
