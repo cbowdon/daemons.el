@@ -6,26 +6,14 @@
 (defconst services--output-buffer-name "*services-output*")
 (defconst services--error-buffer-name "*services-error*")
 
+;; to be defined for each init system
 (defvar services--commands-alist nil "Services commands alist")
+(defvar services--list-fun nil "Function to list all services")
+(defvar services--pretty-print-fun nil "Function to list all services")
 
 (defvar services-mode-map nil "Keymap for services mode")
 
 (defvar services-list nil "List of current system services")
-
-;; assignments
-(setq services-mode-map
-      (let ((map (make-sparse-keymap)))
-        (define-key map [tab] 'services-next-line)
-        (define-key map [backtab] 'services-prev-line)
-        (define-key map (kbd "g") 'services-refresh-dashboard)
-        (define-key map (kbd "n") 'services-next-line)
-        (define-key map (kbd "p") 'services-prev-line)
-        (define-key map (kbd "RET") 'services-status-current)
-        (define-key map (kbd "s") 'services-start-current)
-        (define-key map (kbd "S") 'services-stop-current)
-        (define-key map (kbd "R") 'services-restart-current)
-        (define-key map (kbd "r") 'services-reload-current)
-        map))
 
 ;; defuns
 (defun split-lines (string)
@@ -33,10 +21,10 @@
   (split-string string "[\n\r]+" t))
 
 (defun services--list-all ()
-  (funcall (alist-get 'list services--commands-alist)))
+  (funcall services--list-fun))
 
 (defun services--pretty-print (service)
-  (funcall (alist-get 'pretty-print services--commands-alist) service))
+  (funcall services--pretty-print-fun service))
 
 (defun services-next-line ()
   "Move the cursor the next line"
@@ -52,47 +40,23 @@
   (let ((index (- (line-number-at-pos) (services--header-lines) 1)))
     (nth index services-list)))
 
-(defun services-show-current ()
-  (interactive)
-  (services--run 'show))
-
-(defun services-status-current ()
-  (interactive)
-  (services--run 'status))
-
-(defun services-start-current ()
-  (interactive)
-  (services--run 'start))
-
-(defun services-stop-current ()
-  (interactive)
-  (services--run 'stop))
-
-(defun services-restart-current ()
-  (interactive)
-  (services--run 'restart))
-
-(defun services-reload-current ()
-  (interactive)
-  (services--run 'reload))
-
-(defun services--run (command)
+(defun services-run (command)
   (let ((service-name (car (services--current)))
         (command-fun (alist-get command services--commands-alist)))
+    (when (not command-fun)
+      (error "No such service command: %s" command))
     (async-shell-command (funcall command-fun service-name)
                          (get-buffer-create services--output-buffer-name)
                          (get-buffer-create services--error-buffer-name))))
 
-;; mode definition
-(define-derived-mode services-mode special-mode
-  "Services"
-  "Dashboard for viewing and controlling system services"
-  (linum-mode -1)
-  (page-break-lines-mode 1)
-  (whitespace-mode -1)
-  (setq buffer-read-only nil
-        truncate-lines t))
+(defun services-status-current () (interactive) (services-run 'status))
+(defun services-show-current () (interactive) (services-run 'show))
+(defun services-start-current () (interactive) (services-run 'start))
+(defun services-stop-current () (interactive) (services-run 'stop))
+(defun services-restart-current () (interactive) (services-run 'restart))
+(defun services-reload-current () (interactive) (services-run 'reload))
 
+;; dashboard drawing
 (defun services--header ()
   (list
    (format "Services on %s (%s)" system-name (current-time-string))
@@ -114,6 +78,34 @@
     (dolist (service services-list)
       (insert (services--pretty-print service)))))
 
+;; Start by supporting systemd
+(load-file "./services-systemd.el")
+
+;; assignments
+(setq services-mode-map
+      (let ((map (make-sparse-keymap)))
+        (define-key map [tab] 'services-next-line)
+        (define-key map [backtab] 'services-prev-line)
+        (define-key map (kbd "g") 'services-refresh-dashboard)
+        (define-key map (kbd "n") 'services-next-line)
+        (define-key map (kbd "p") 'services-prev-line)
+        (define-key map (kbd "RET") 'services-status-current)
+        (define-key map (kbd "s") 'services-start-current)
+        (define-key map (kbd "S") 'services-stop-current)
+        (define-key map (kbd "R") 'services-restart-current)
+        (define-key map (kbd "r") 'services-reload-current)
+        map))
+
+;; mode definition
+(define-derived-mode services-mode special-mode
+  "Services"
+  "Dashboard for viewing and controlling system services"
+  (linum-mode -1)
+  (page-break-lines-mode 1)
+  (whitespace-mode -1)
+  (setq buffer-read-only nil
+        truncate-lines t))
+
 (defun services ()
   (interactive)
   (let ((dashboard-buffer (get-buffer-create services--dashboard-buffer-name)))
@@ -122,9 +114,6 @@
       (switch-to-buffer-other-window dashboard-buffer)
       (services-mode)
       (services-refresh-dashboard))))
-
-;; Start by supporting systemd
-(load-file "./services-systemd.el")
 
 ;; evil
 (when (and (boundp 'evil-emacs-state-modes)

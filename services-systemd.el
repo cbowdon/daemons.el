@@ -1,16 +1,12 @@
 (defvar services--commands-alist-systemd nil "Services commands alist for systemd")
 
 (setq services--commands-alist-systemd
-      '((list . services--systemd-list-all)
-        (pretty-print . services--systemd-pretty-print)
-        (show . (lambda (name) (format "systemctl show %s" name)))
+      '((show . (lambda (name) (format "systemctl show %s" name)))
         (status . (lambda (name) (format "systemctl status %s" name)))
         (start . (lambda (name) (format "systemctl start %s" name)))
         (stop . (lambda (name) (format "systemctl stop %s" name)))
         (restart . (lambda (name) (format "systemctl restart %s" name)))
         (reload . (lambda (name) (format "systemctl reload %s" name)))))
-
-(setq services--commands-alist services--commands-alist-systemd)
 
 (defun services--systemd-parse-list (services-list)
   (seq-map
@@ -36,3 +32,7 @@
   (let ((name (car service))
         (props (cdr service)))
     (format "%s\t\t[%s]\n" name (plist-get props :status))))
+
+(setq services--commands-alist services--commands-alist-systemd)
+(setq services--list-fun 'services--systemd-list-all)
+(setq services--pretty-print-fun 'services--systemd-pretty-print)
