@@ -21,14 +21,14 @@
         (define-key map (kbd "g") 'services-refresh-dashboard)
         (define-key map (kbd "n") 'services-next-line)
         (define-key map (kbd "p") 'services-prev-line)
-        (define-key map (kbd "RET") 'services-show-current)
-        (define-key map (kbd "s") 'services-status-current)
-        (define-key map (kbd "S") 'services-start-current)
-        (define-key map (kbd "k") 'services-stop-current)
+        (define-key map (kbd "RET") 'services-status-current)
+        (define-key map (kbd "s") 'services-start-current)
+        (define-key map (kbd "S") 'services-stop-current)
         map))
 
 (setq services--commands-alist-systemd
       '((list . services--systemd-list-all)
+        (pretty-print . services--systemd-pretty-print)
         (show . (lambda (name) (format "systemctl show %s" name)))
         (status . (lambda (name) (format "systemctl status %s" name)))
         (start . (lambda (name) (format "systemctl start %s" name)))
@@ -61,8 +61,17 @@
     (split-lines)
     (services--systemd-parse-list)))
 
+(defun services--systemd-pretty-print (service)
+  "Produce a formatted string describing a service"
+  (let ((name (car service))
+        (props (cdr service)))
+    (format "%s\t\t[%s]\n" name (plist-get props :status))))
+
 (defun services--list-all ()
   (funcall (alist-get 'list services--commands-alist)))
+
+(defun services--pretty-print (service)
+  (funcall (alist-get 'pretty-print services--commands-alist) service))
 
 (defun services-next-line ()
   "Move the cursor the next line"
@@ -80,17 +89,26 @@
 
 (defun services-show-current ()
   (interactive)
-  (services-run
-   (funcall (alist-get 'show services--commands-alist) (car (services--current)))))
+  (services--run 'show))
 
-(defun services-status-current ())
-(defun services-start-current ())
-(defun services-stop-current ())
+(defun services-status-current ()
+  (interactive)
+  (services--run 'status))
 
-(defun services-run (command)
-  (async-shell-command command
-                       (get-buffer-create services--output-buffer-name)
-                       (get-buffer-create services--error-buffer-name)))
+(defun services-start-current ()
+  (interactive)
+  (services--run 'start))
+
+(defun services-stop-current ()
+  (interactive)
+  (services--run 'stop))
+
+(defun services--run (command)
+  (let ((service-name (car (services--current)))
+        (command-fun (alist-get command services--commands-alist)))
+    (async-shell-command (funcall command-fun service-name)
+                         (get-buffer-create services--output-buffer-name)
+                         (get-buffer-create services--error-buffer-name))))
 
 ;; mode definition
 (define-derived-mode services-mode special-mode
@@ -120,10 +138,8 @@
       (insert (format "%s\n" header-line)))
     ;; insert contents
     (setq services-list (services--list-all))
-    (dolist (service-line services-list)
-      (let ((name (car service-line))
-            (props (cdr service-line)))
-        (insert (format "%s\t\t[%s]\n" name (plist-get props :status)))))))
+    (dolist (service services-list)
+      (insert (services--pretty-print service)))))
 
 (defun services ()
   (interactive)
@@ -136,5 +152,5 @@
 
 ;; evil
 (when (and (boundp 'evil-emacs-state-modes)
-           (not (memq 'services-mode evil-emacs-state-modes))) 
+           (not (memq 'services-mode evil-emacs-state-modes)))
   (add-to-list 'evil-emacs-state-modes 'services-mode))
