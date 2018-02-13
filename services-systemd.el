@@ -28,7 +28,7 @@
      (let ((parts (split-string line)))
        (cons
         (replace-regexp-in-string "\.service" "" (car parts))
-        (list :status (cadr parts)
+        (list :enabled (cadr parts)
               :original-line line))))
    services-list))
 
@@ -45,7 +45,7 @@
   "Produce a formatted string describing a service"
   (let ((name (car service))
         (props (cdr service)))
-    (format "%s\t\t[%s]\n" name (plist-get props :status))))
+    (format "%-40s\t[%s]\n" name (plist-get props :enabled))))
 
 (setq services--commands-alist services--commands-alist-systemd)
 (setq services--list-fun 'services--systemd-list-all)

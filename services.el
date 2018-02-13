@@ -62,13 +62,13 @@
   (interactive)
   (beginning-of-line 0))
 
-(defun services--current ()
+(defun services--service-at-point ()
   (let ((index (- (line-number-at-pos) (services--header-lines) 1)))
     (nth index services-list)))
 
 (defun services-run (command)
   "Run the given service COMMAND. Show results in a temporary buffer or the minibuffer."
-  (let ((service-name (car (services--current)))
+  (let ((service-name (car (services--service-at-point)))
         (command-fun (alist-get command services--commands-alist)))
     (when (not command-fun)
       (error "No such service command: %s" command))
@@ -76,12 +76,12 @@
                          (get-buffer-create services--output-buffer-name)
                          (get-buffer-create services--error-buffer-name))))
 
-(defun services-status-current () (interactive) (services-run 'status))
-(defun services-show-current () (interactive) (services-run 'show))
-(defun services-start-current () (interactive) (services-run 'start))
-(defun services-stop-current () (interactive) (services-run 'stop))
-(defun services-restart-current () (interactive) (services-run 'restart))
-(defun services-reload-current () (interactive) (services-run 'reload))
+(defun services-status-at-point () (interactive) (services-run 'status))
+(defun services-show-at-point () (interactive) (services-run 'show))
+(defun services-start-at-point () (interactive) (services-run 'start))
+(defun services-stop-at-point () (interactive) (services-run 'stop))
+(defun services-restart-at-point () (interactive) (services-run 'restart))
+(defun services-reload-at-point () (interactive) (services-run 'reload))
 
 ;; dashboard drawing
 (defun services--header ()
@@ -116,11 +116,11 @@
         (define-key map (kbd "g") 'services-refresh-dashboard)
         (define-key map (kbd "n") 'services-next-line)
         (define-key map (kbd "p") 'services-prev-line)
-        (define-key map (kbd "RET") 'services-status-current)
-        (define-key map (kbd "s") 'services-start-current)
-        (define-key map (kbd "S") 'services-stop-current)
-        (define-key map (kbd "R") 'services-restart-current)
-        (define-key map (kbd "r") 'services-reload-current)
+        (define-key map (kbd "RET") 'services-status-at-point)
+        (define-key map (kbd "s") 'services-start-at-point)
+        (define-key map (kbd "S") 'services-stop-at-point)
+        (define-key map (kbd "R") 'services-restart-at-point)
+        (define-key map (kbd "r") 'services-reload-at-point)
         map))
 
 ;; mode definition
