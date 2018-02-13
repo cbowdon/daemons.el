@@ -1,3 +1,17 @@
+;;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
+
+;; Copyright (c) 2018 Chris Bowdon
+;;
+;; Author: Chris Bowdon
+;; URL: https://github.com/cbowdon/services-mode
+;;
+;; This file is not part of GNU Emacs.
+;;
+;;; License: GPLv3
+;;
+;;; Commentary:
+
+;;; Code:
 (defvar services--commands-alist-systemd nil "Services commands alist for systemd")
 
 (setq services--commands-alist-systemd

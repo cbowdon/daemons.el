@@ -1,4 +1,26 @@
-;; -*- lexical-binding: t -*-
+;;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
+
+;; Copyright (c) 2018 Chris Bowdon
+;;
+;; Author: Chris Bowdon
+;; URL: https://github.com/cbowdon/services-mode
+;;
+;; This file is not part of GNU Emacs.
+;;
+;;; License: GPLv3
+;;
+;; Created: February 13, 2018
+;; Modified: February 13, 2018
+;; Version: 0.0.1
+;; Keywords: startup screen tools
+;; Package-Requires: ((emacs "25.3") (page-break-lines "0.11"))
+;;
+;;; Commentary:
+;; A UI for managing init system services.
+
+;;; Code:
+
+
 (require 'seq)
 
 ;; declarations
