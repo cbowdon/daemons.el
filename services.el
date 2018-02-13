@@ -6,6 +6,10 @@
 (defconst services--output-buffer-name "*services-output*")
 (defconst services--error-buffer-name "*services-error*")
 
+(defcustom services-always-sudo nil
+  "Whether to always attempt to sudo up in services-mode."
+  :type 'boolean)
+
 ;; to be defined for each init system
 (defvar services--commands-alist nil "Services commands alist")
 (defvar services--list-fun nil "Function to list all services")
@@ -41,6 +45,7 @@
     (nth index services-list)))
 
 (defun services-run (command)
+  "Run the given service COMMAND. Show results in a temporary buffer or the minibuffer."
   (let ((service-name (car (services--current)))
         (command-fun (alist-get command services--commands-alist)))
     (when (not command-fun)
@@ -104,7 +109,11 @@
   (page-break-lines-mode 1)
   (whitespace-mode -1)
   (setq buffer-read-only nil
-        truncate-lines t))
+        truncate-lines t)
+  (when services-always-sudo
+    ;; Become root, but hang out in a temp dir to minimise damage potential
+    (let ((tempdir (shell-command-to-string "mktemp -d")))
+      (cd (format "/sudo::%s "tempdir)))))
 
 (defun services ()
   (interactive)
