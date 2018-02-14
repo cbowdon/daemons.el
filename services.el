@@ -51,9 +51,19 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 (defvar services--commands-alist nil "Services commands alist")
 (defvar services--list-fun nil "Function to list all services")
 
-(defvar services-mode-map nil "Keymap for services mode")
+(defvar services-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") 'services-status-at-point)
+    (define-key map (kbd "s") 'services-start-at-point)
+    (define-key map (kbd "S") 'services-stop-at-point)
+    (define-key map (kbd "R") 'services-restart-at-point)
+    (define-key map (kbd "r") 'services-reload-at-point)
+    map)
+  "Keymap for services mode")
 
-(defvar services-list nil "List of current system services")
+(defvar services-output-mode-map services-mode-map "Keymap for services output mode")
+
+(defvar service-id nil "Current service id")
 
 ;; defuns
 (defun split-lines (string)
@@ -63,21 +73,30 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 (defun services--list-all ()
   (funcall services--list-fun))
 
+(defun services--service-at-point ()
+  "Return the id of the service of the current line if in the list buffer.
+Otherwise, return value of service-id variable (set by services--run)."
+  (if (derived-mode-p 'tabulated-list-mode)
+      (tabulated-list-get-id)
+    service-id))
+
 (defun services--run (command)
   "Run the given service COMMAND. Show results in a temporary buffer."
-  (let ((service-name (tabulated-list-get-id))
+  (let ((service-name (services--service-at-point))
         (command-fun (alist-get command services--commands-alist)))
     (when (not command-fun)
       (error "No such service command: %s" command))
     (with-current-buffer (get-buffer-create services--output-buffer-name)
-      (setq buffer-read-only nil)
+      (setq buffer-read-only nil
+            service-id service-name)
       (delete-region (point-min) (point-max))
       (insert (concat
                (propertize (format "Output of `%s` on `%s`:" command service-name) 'face 'underline)
                "\n\n"))
       (shell-command (funcall command-fun service-name) t)
       (services-output-mode))
-    (switch-to-buffer-other-window services--output-buffer-name)))
+    (when (not (equal (buffer-name) services--output-buffer-name))
+      (switch-to-buffer-other-window services--output-buffer-name))))
 
 (defun services-status-at-point () (interactive) (services--run 'status))
 (defun services-show-at-point () (interactive) (services--run 'show))
@@ -88,16 +107,6 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 
 ;; Start by supporting systemd
 (load-file "./services-systemd.el")
-
-;; assignments
-(setq services-mode-map
-      (let ((map (make-sparse-keymap)))
-        (define-key map (kbd "RET") 'services-status-at-point)
-        (define-key map (kbd "s") 'services-start-at-point)
-        (define-key map (kbd "S") 'services-stop-at-point)
-        (define-key map (kbd "R") 'services-restart-at-point)
-        (define-key map (kbd "r") 'services-reload-at-point)
-        map))
 
 ;; mode definitions
 (defun services-mode-refresh ()

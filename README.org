@@ -22,7 +22,7 @@ The following commands are available for each service:
 | r   | Reload service      |
 | R   | Restart service     |
 
-Results of commands are displayed in a =special-mode= buffer. You can dismiss it with =q=.
+Results of commands are displayed in a =special-mode= buffer, in which the same commands are available for the relevant service. You can dismiss it with =q=.
 
 ** Installation
 
