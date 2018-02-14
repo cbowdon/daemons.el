@@ -27,15 +27,25 @@
 (defconst services--list-buffer-name "*services*")
 (defconst services--output-buffer-name "*services-output*")
 
+(defgroup services-mode-customization-group nil "Customization group for Services mode")
+
 (defcustom services-always-sudo nil
-  "Whether to always attempt to sudo up in services-mode."
-  :type 'boolean)
+  "Whether to always attempt to sudo up in services-mode.
+This defaults to off because in some systems at least you can query status
+without special privileges and will be prompted for a root password if you try
+anything else. But at other times it's much more convenient to just assume sudo
+powers when the buffer loads and enact everything as root.
+
+Security wise - off is safer of course, to avoid unnecessary privilege."
+  :type 'boolean
+  :group 'services-mode-customization-group)
 
 (defcustom services-do-no-evil t
   "Whether to add services-mode(s) to evil-emacs-state-modes.
 This is the author's preference - it's a special mode and these are ergonomic
 enough that it's not worth choosing new bindings. But the choice is yours."
-  :type 'boolean)
+  :type 'boolean
+  :group 'services-mode-customization-group)
 
 ;; to be defined for each init system
 (defvar services--commands-alist nil "Services commands alist")
@@ -97,6 +107,7 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 (define-derived-mode services-mode tabulated-list-mode
   "Services"
   "UI for viewing and controlling system services"
+  :group 'services-mode-customization-group
   (setq tabulated-list-format [("Service" 60 t)
                                ("Enabled" 40 t)]
         tabulated-list-padding 2)
@@ -119,7 +130,8 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 
 (define-derived-mode services-output-mode special-mode
   "Services Output"
-  "Mode for displaying output of Services commands")
+  "Mode for displaying output of Services commands"
+  :group 'services-mode-customization-group)
 
 ;; evil
 (when (and services-do-no-evil

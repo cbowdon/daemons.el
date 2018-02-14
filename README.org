@@ -27,3 +27,7 @@ Results of commands are displayed in a =special-mode= buffer. You can dismiss it
 ** Installation
 
 Currently just =(load-file "/path/to/services.el")=.
+
+** Configuration
+
+Please see =M-x customize-mode=.
