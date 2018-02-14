@@ -6,14 +6,14 @@
   (let ((input '("accounts-daemon.service                      disabled"
                  "alsa-state.service                           static  "
                  "auditd.service                               enabled "))
-        (expected '(("accounts-daemon" . (:status "disabled" :original-line "accounts-daemon.service                      disabled"))
-                    ("alsa-state" . (:status "static" :original-line "alsa-state.service                           static  "))
-                    ("auditd" . (:status "enabled" :original-line "auditd.service                               enabled ")))))
+        (expected '(("accounts-daemon" . ["accounts-daemon" "disabled"])
+                    ("alsa-state" ["alsa-state" "static"])
+                    ("auditd" ["auditd" "enabled"]))))
     (should (equal expected (services--systemd-parse-list input)))))
 
 (ert-deftest systemd-list-test ()
   (when (file-exists-p "/etc/systemd")
-    (let ((expected '("accounts-daemon" . (:status "disabled" :original-line "accounts-daemon.service                      disabled")))
+    (let ((expected '("accounts-daemon" ["accounts-daemon" "disabled"]))
           (result (services--systemd-list-all)))
       (should (seq-contains result expected))
       (should (< 5 (length result))))))

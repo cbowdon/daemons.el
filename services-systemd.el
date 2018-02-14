@@ -22,15 +22,14 @@
         (restart . (lambda (name) (format "systemctl restart %s" name)))
         (reload . (lambda (name) (format "systemctl reload %s" name)))))
 
-(defun services--systemd-parse-list (services-list)
+(defun services--systemd-parse-list (raw-systemctl-output)
   (seq-map
    (lambda (line)
-     (let ((parts (split-string line)))
-       (cons
-        (replace-regexp-in-string "\.service" "" (car parts))
-        (list :enabled (cadr parts)
-              :original-line line))))
-   services-list))
+     (let* ((parts (split-string line))
+            (name (replace-regexp-in-string "\.service" "" (car parts)))
+            (enabled (cadr parts)))
+       (list name (vector name enabled))))
+   raw-systemctl-output))
 
 (defun services--systemd-list-all ()
   "Return an alist of services on a systemd system.
@@ -41,12 +40,5 @@
     (split-lines)
     (services--systemd-parse-list)))
 
-(defun services--systemd-pretty-print (service)
-  "Produce a formatted string describing a service"
-  (let ((name (car service))
-        (props (cdr service)))
-    (format "%-40s\t[%s]\n" name (plist-get props :enabled))))
-
 (setq services--commands-alist services--commands-alist-systemd)
 (setq services--list-fun 'services--systemd-list-all)
-(setq services--pretty-print-fun 'services--systemd-pretty-print)

@@ -8,9 +8,9 @@ Only =systemd= right now, but it's designed to be extensible. InitV is next on t
 
 ** Usage
 
-You can open the services dashboard with =M-x services=.
+You can open the services list with =M-x services=.
 
-Navigate the services list with =n= and =p=. Refresh the list with =g=.
+Navigate the list with =n= and =p=. Refresh the list with =g=.
 
 The following commands are available for each service:
 
