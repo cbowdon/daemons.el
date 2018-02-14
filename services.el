@@ -26,10 +26,15 @@
 ;; declarations
 (defconst services--list-buffer-name "*services*")
 (defconst services--output-buffer-name "*services-output*")
-(defconst services--error-buffer-name "*services-error*")
 
 (defcustom services-always-sudo nil
   "Whether to always attempt to sudo up in services-mode."
+  :type 'boolean)
+
+(defcustom services-do-no-evil t
+  "Whether to add services-mode(s) to evil-emacs-state-modes.
+This is the author's preference - it's a special mode and these are ergonomic
+enough that it's not worth choosing new bindings. But the choice is yours."
   :type 'boolean)
 
 ;; to be defined for each init system
@@ -48,22 +53,28 @@
 (defun services--list-all ()
   (funcall services--list-fun))
 
-(defun services-run (command)
-  "Run the given service COMMAND. Show results in a temporary buffer or the minibuffer."
+(defun services--run (command)
+  "Run the given service COMMAND. Show results in a temporary buffer."
   (let ((service-name (tabulated-list-get-id))
         (command-fun (alist-get command services--commands-alist)))
     (when (not command-fun)
       (error "No such service command: %s" command))
-    (async-shell-command (funcall command-fun service-name)
-                         (get-buffer-create services--output-buffer-name)
-                         (get-buffer-create services--error-buffer-name))))
+    (with-current-buffer (get-buffer-create services--output-buffer-name)
+      (setq buffer-read-only nil)
+      (delete-region (point-min) (point-max))
+      (insert (concat
+               (propertize (format "Output of `%s` on `%s`:" command service-name) 'face 'underline)
+               "\n\n"))
+      (shell-command (funcall command-fun service-name) t)
+      (services-output-mode))
+    (switch-to-buffer-other-window services--output-buffer-name)))
 
-(defun services-status-at-point () (interactive) (services-run 'status))
-(defun services-show-at-point () (interactive) (services-run 'show))
-(defun services-start-at-point () (interactive) (services-run 'start))
-(defun services-stop-at-point () (interactive) (services-run 'stop))
-(defun services-restart-at-point () (interactive) (services-run 'restart))
-(defun services-reload-at-point () (interactive) (services-run 'reload))
+(defun services-status-at-point () (interactive) (services--run 'status))
+(defun services-show-at-point () (interactive) (services--run 'show))
+(defun services-start-at-point () (interactive) (services--run 'start))
+(defun services-stop-at-point () (interactive) (services--run 'stop))
+(defun services-restart-at-point () (interactive) (services--run 'restart))
+(defun services-reload-at-point () (interactive) (services--run 'reload))
 
 ;; Start by supporting systemd
 (load-file "./services-systemd.el")
@@ -78,7 +89,7 @@
         (define-key map (kbd "r") 'services-reload-at-point)
         map))
 
-;; mode definition
+;; mode definitions
 (defun services-mode-refresh ()
   "Refresh the list of services."
   (setq tabulated-list-entries 'services--list-all))
@@ -106,9 +117,15 @@
       (services-mode-refresh)
       (tabulated-list-print t t))))
 
+(define-derived-mode services-output-mode special-mode
+  "Services Output"
+  "Mode for displaying output of Services commands")
+
 ;; evil
-(when (and (boundp 'evil-emacs-state-modes)
+(when (and services-do-no-evil
+           (boundp 'evil-emacs-state-modes)
            (not (memq 'services-mode evil-emacs-state-modes)))
-  (add-to-list 'evil-emacs-state-modes 'services-mode))
+  (add-to-list 'evil-emacs-state-modes 'services-mode)
+  (add-to-list 'evil-emacs-state-modes 'services-output-mode))
 
 (provide 'services)

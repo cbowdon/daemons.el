@@ -10,7 +10,7 @@ Only =systemd= right now, but it's designed to be extensible. InitV is next on t
 
 You can open the services list with =M-x services=.
 
-Navigate the list with =n= and =p=. Refresh the list with =g=.
+Navigate the list with =n= and =p=. Refresh the list with =g= (it's just a =tabulated-list-mode= buffer).
 
 The following commands are available for each service:
 
@@ -21,6 +21,8 @@ The following commands are available for each service:
 | S   | Stop service        |
 | r   | Reload service      |
 | R   | Restart service     |
+
+Results of commands are displayed in a =special-mode= buffer. You can dismiss it with =q=.
 
 ** Installation
 
