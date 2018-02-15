@@ -122,6 +122,14 @@ Otherwise, return value of services--current-id variable (set by services--run).
     (load-file "./services-systemd.el")
   (load-file "./services-sysvinit.el"))
 
+;;;; To demo SysVinit support with mocked-out shell commands:
+;; (load-file "./services-sysvinit.el")
+;; (setq services--shell-command-to-string (lambda (_) "
+;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
+;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
+;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
+;; (setq services--shell-command (lambda (&rest _) (insert "service is fucking ded")))
+
 ;; mode definitions
 (defun services-mode-refresh ()
   "Refresh the list of services."

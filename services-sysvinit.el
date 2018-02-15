@@ -25,7 +25,7 @@
   (let* ((parts (split-string raw-chkconfig-output nil t))
          (name (car parts))
          (run-level-statuses (cdr parts)))
-    (list name (apply 'vector run-level-statuses))))
+    (list name (apply 'vector (cons name run-level-statuses)))))
 
 (defun services-sysvinit--list ()
   "Return a list of services on a SysVinit system."
@@ -36,7 +36,7 @@
 
 (defun services-sysvinit--list-headers ()
   (apply 'vector
-         (cons '("Service" 60 t)
+         (cons '("Service" 40 t)
                (seq-map
                 (lambda (x)
                   (list (number-to-string x) 5 t))
