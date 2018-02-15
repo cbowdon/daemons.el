@@ -1,11 +1,10 @@
-#+TODO: TODO IN-PROGRESS DONE
 * Services Mode
 
 This is an Emacs mode to give you a UI for managing init system services.
 
 ** Init system support
 
-Only =systemd= right now, but it's designed to be extensible. SysVinit is next on the list.
+Only =systemd= and =SysVinit= right now, but it's designed to be extensible.
 
 ** Usage
 
@@ -32,13 +31,3 @@ Currently just =(load-file "/path/to/services.el")=.
 ** Configuration
 
 Please see =M-x customize-mode=.
-
-** Roadmap                                                         :noexport:
-*** IN-PROGRESS SysVinit support
-**** DONE Define commands (basic support)
-**** DONE Enable injecting shell-command handlers
-**** DONE Implement better submodule system
-**** TODO Define (and test) submodule contract
-*** TODO Package install
-*** TODO sc.exe support
-*** TODO launchctl support
