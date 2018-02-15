@@ -37,7 +37,7 @@ Please see =M-x customize-mode=.
 *** IN-PROGRESS SysVinit support
 **** DONE Define commands (basic support)
 **** DONE Enable injecting shell-command handlers
-**** TODO Implement better submodule system
+**** DONE Implement better submodule system
 **** TODO Define (and test) submodule contract
 *** TODO Package install
 *** TODO sc.exe support

@@ -48,6 +48,18 @@ enough that it's not worth choosing new bindings. But the choice is yours."
   :type 'boolean
   :group 'services-mode-customization-group)
 
+(defcustom services-init-system-submodule-path nil
+  "Path to a lisp file that implements specific commands for a particular init system (e.g. \"./services-systemd.el\").
+Those specific commands are:
+
+- `services--commands-alist'
+- `services--list-fun'
+- `services--list-headers-fun'
+
+If this variable is nil then the init system will be guessed by `services-guess-init-system-submodule-path'."
+  :type '(file :must-match t)
+  :group 'services-mode-customization-group)
+
 (defvar services--shell-command 'shell-command
   "Dynamically bound alias for shell-command. This is to enable injection of test mocks.")
 
@@ -55,9 +67,23 @@ enough that it's not worth choosing new bindings. But the choice is yours."
   "Dynamically bound alias for shell-command-to-string. This is to enable injection of test mocks.")
 
 ;; to be defined for each init system
-(defvar services--commands-alist nil "Services commands alist")
-(defvar services--list-fun nil "Function to list all services")
-(defvar services--list-headers-fun nil "Function to get headers for list of all services")
+(defvar services--commands-alist nil
+  "Services commands alist.
+The car of each pair is the command symbol (e.g. 'stop).
+The cdr of each pair is a function taking a service name and returning a shell command to execute.
+
+e.g. '((start . (lambda (x) (format \"service %s start\" x)))
+       (stop . (lambda (x) (format \"service %s stop\" x))))")
+
+(defvar services--list-fun nil
+  "Function to list all services.
+It should take no arguments and return a list in the right format for `tabulated-list-entries'.
+It will therefore also need to match the columns defined with `services--list-headers-fun'.")
+
+(defvar services--list-headers-fun nil
+  "Function to get headers for list of all services.
+It should take no arguments and return a vector in the right format for `tabulated-list-format'.
+It will therefore also need to match the entries returned by `services--list-fun'.")
 
 (defvar services-mode-map
   (let ((map (make-sparse-keymap)))
@@ -70,7 +96,6 @@ enough that it's not worth choosing new bindings. But the choice is yours."
   "Keymap for services mode")
 
 (defvar services-output-mode-map services-mode-map "Keymap for services output mode")
-
 (defvar services--current-id nil "Current service id")
 
 ;; defuns
@@ -117,18 +142,21 @@ Otherwise, return value of services--current-id variable (set by services--run).
 (defun services-restart-at-point () (interactive) (services--run 'restart))
 (defun services-reload-at-point () (interactive) (services--run 'reload))
 
-;; Shitty prototype support for different init systems
-(if (file-exists-p "/etc/systemd")
-    (load-file "./services-systemd.el")
-  (load-file "./services-sysvinit.el"))
-
 ;;;; To demo SysVinit support with mocked-out shell commands:
-;; (load-file "./services-sysvinit.el")
+;; (setq services--init-system-submodule-path "./services-sysvinit.el")
 ;; (setq services--shell-command-to-string (lambda (_) "
 ;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
 ;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
 ;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
 ;; (setq services--shell-command (lambda (&rest _) (insert "service is fucking ded")))
+
+(defun services-guess-init-system-submodule-path ()
+  "Call \"which\" to identify an installed init system."
+  (cond ((= 0 (funcall services--shell-command "which systemctl")) "./services-systemd.el")
+        ((= 0 (funcall services--shell-command "which service")) "./services-sysvinit.el")
+        (t (error "I'm sorry, your init system isn't supported yet!"))))
+
+(load-file (or services-init-system-submodule-path (services-guess-init-system-submodule-path)))
 
 ;; mode definitions
 (defun services-mode-refresh ()
