@@ -21,20 +21,17 @@
   "Services commands alist for systemd")
 
 (defun services-systemd--parse-list-item (raw-systemctl-output)
-  (seq-map
-   (lambda (line)
-     (let* ((parts (split-string line))
-            (name (replace-regexp-in-string "\.service" "" (car parts)))
-            (enabled (cadr parts)))
-       (list name (vector name enabled))))
-   raw-systemctl-output))
+  (let* ((parts (split-string raw-systemctl-output))
+         (name (replace-regexp-in-string "\.service" "" (car parts)))
+         (enabled (cadr parts)))
+    (list name (vector name enabled))))
 
 (defun services-systemd--list ()
   "Return a list of services on a systemd system."
   (thread-last  "systemctl list-unit-files --type=service --no-legend"
-    (shell-command-to-string)
+    (funcall services--shell-command-to-string)
     (split-lines)
-    (services-systemd--parse-list-item)))
+    (seq-map 'services-systemd--parse-list-item)))
 
 (defun services-systemd--list-headers ()
   [("Service" 60 t)

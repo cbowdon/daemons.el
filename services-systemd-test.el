@@ -1,18 +1,19 @@
-(require 'ert)
 (load-file "./services-systemd.el")
 
-(ert-deftest systemd-parse-list-test ()
-  (let ((input '("accounts-daemon.service                      disabled"
-                 "alsa-state.service                           static  "
-                 "auditd.service                               enabled "))
-        (expected '(("accounts-daemon" ["accounts-daemon" "disabled"])
-                    ("alsa-state" ["alsa-state" "static"])
-                    ("auditd" ["auditd" "enabled"]))))
-    (should (equal expected (services-systemd--parse-list-item input)))))
+(ert-deftest systemd-parse-list-item-test ()
+  (let ((input "accounts-daemon.service                      disabled")
+        (expected '("accounts-daemon" ["accounts-daemon" "disabled"])))
+    (should (equal expected
+                   (services-systemd--parse-list-item input)))))
 
 (ert-deftest systemd-list-test ()
-  (when (file-exists-p "/etc/systemd")
-    (let ((expected '("accounts-daemon" ["accounts-daemon" "disabled"]))
-          (result (services-systemd--list)))
-      (should (seq-contains result expected))
-      (should (< 5 (length result))))))
+  (let* ((dummy-output "
+accounts-daemon.service                      disabled
+alsa-state.service                           static  
+auditd.service                               enabled ")
+         (services--shell-command-to-string (lambda (_) dummy-output))
+         (expected '(("accounts-daemon" ["accounts-daemon" "disabled"])
+                     ("alsa-state" ["alsa-state" "static"])
+                     ("auditd" ["auditd" "enabled"]))))
+    (should (equal expected
+                   (services-systemd--list)))))

@@ -27,6 +27,7 @@
 (defconst services--list-buffer-name "*services*")
 (defconst services--output-buffer-name "*services-output*")
 
+;; customization
 (defgroup services-mode-customization-group nil "Customization group for Services mode")
 
 (defcustom services-always-sudo nil
@@ -47,6 +48,12 @@ enough that it's not worth choosing new bindings. But the choice is yours."
   :type 'boolean
   :group 'services-mode-customization-group)
 
+(defvar services--shell-command 'shell-command
+  "Dynamically bound alias for shell-command. This is to enable injection of test mocks.")
+
+(defvar services--shell-command-to-string 'shell-command-to-string
+  "Dynamically bound alias for shell-command-to-string. This is to enable injection of test mocks.")
+
 ;; to be defined for each init system
 (defvar services--commands-alist nil "Services commands alist")
 (defvar services--list-fun nil "Function to list all services")
@@ -64,7 +71,7 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 
 (defvar services-output-mode-map services-mode-map "Keymap for services output mode")
 
-(defvar service-id nil "Current service id")
+(defvar services--current-id nil "Current service id")
 
 ;; defuns
 (defun split-lines (string)
@@ -81,10 +88,10 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 
 (defun services--service-at-point ()
   "Return the id of the service of the current line if in the list buffer.
-Otherwise, return value of service-id variable (set by services--run)."
+Otherwise, return value of services--current-id variable (set by services--run)."
   (if (derived-mode-p 'tabulated-list-mode)
       (tabulated-list-get-id)
-    service-id))
+    services--current-id))
 
 (defun services--run (command)
   "Run the given service COMMAND. Show results in a temporary buffer."
@@ -94,12 +101,12 @@ Otherwise, return value of service-id variable (set by services--run)."
       (error "No such service command: %s" command))
     (with-current-buffer (get-buffer-create services--output-buffer-name)
       (setq buffer-read-only nil
-            service-id service-name)
+            services--current-id service-name)
       (delete-region (point-min) (point-max))
       (insert (concat
                (propertize (format "Output of `%s` on `%s`:" command service-name) 'face 'underline)
                "\n\n"))
-      (shell-command (funcall command-fun service-name) t)
+      (funcall services--shell-command (funcall command-fun service-name) t)
       (services-output-mode))
     (when (not (equal (buffer-name) services--output-buffer-name))
       (switch-to-buffer-other-window services--output-buffer-name))))
@@ -137,7 +144,7 @@ Otherwise, return value of service-id variable (set by services--run)."
       (switch-to-buffer-other-window list-buffer)
       (when services-always-sudo
         ;; Become root, but hang out in a temp dir to minimise damage potential
-        (let ((tempdir (shell-command-to-string "mktemp -d")))
+        (let ((tempdir (funcall services--shell-command-to-string "mktemp -d")))
           (cd (format "/sudo::%s" tempdir))))
       (services-mode)
       (services-mode-refresh)
