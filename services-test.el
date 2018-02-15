@@ -13,11 +13,11 @@ test
 
 (ert-deftest guess-init-system-submodule-path-test ()
   ;; SysVinit
-  (let ((services--shell-command
+  (let ((services--shell-command-fun
          (lambda (cmd &rest _) (if (equal cmd "which service") 0 1))))
     (should (equal "./services-sysvinit.el" (services-guess-init-system-submodule-path))))
   ;; systemd
-  (let ((services--shell-command
+  (let ((services--shell-command-fun
          (lambda (cmd &rest _) (if (equal cmd "which systemctl") 0 1))))
     (should (equal "./services-systemd.el" (services-guess-init-system-submodule-path)))))
 

@@ -12,6 +12,7 @@
 ;;; Commentary:
 
 ;;; Code:
+
 (defvar services-systemd--commands-alist
   '((status . (lambda (name) (format "systemctl status %s" name)))
     (start . (lambda (name) (format "systemctl start %s" name)))
@@ -29,7 +30,7 @@
 (defun services-systemd--list ()
   "Return a list of services on a systemd system."
   (thread-last  "systemctl list-unit-files --type=service --no-legend"
-    (funcall services--shell-command-to-string)
+    (services--shell-command-to-string)
     (split-lines)
     (seq-map 'services-systemd--parse-list-item)))
 

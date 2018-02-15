@@ -11,7 +11,7 @@
 accounts-daemon.service                      disabled
 alsa-state.service                           static  
 auditd.service                               enabled ")
-         (services--shell-command-to-string (lambda (_) dummy-output))
+         (services--shell-command-to-string-fun (lambda (_) dummy-output))
          (expected '(("accounts-daemon" ["accounts-daemon" "disabled"])
                      ("alsa-state" ["alsa-state" "static"])
                      ("auditd" ["auditd" "enabled"]))))

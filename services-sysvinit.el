@@ -30,7 +30,7 @@
 (defun services-sysvinit--list ()
   "Return a list of services on a SysVinit system."
   (thread-last "chkconfig --list"
-    (funcall services--shell-command-to-string)
+    (services--shell-command-to-string)
     (split-lines)
     (seq-map 'services-sysvinit--parse-list-item)))
 

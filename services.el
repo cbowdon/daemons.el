@@ -1,4 +1,4 @@
-;;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
+;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2018 Chris Bowdon
 ;;
@@ -60,11 +60,11 @@ If this variable is nil then the init system will be guessed by `services-guess-
   :type '(file :must-match t)
   :group 'services-mode-customization-group)
 
-(defvar services--shell-command 'shell-command
-  "Dynamically bound alias for shell-command. This is to enable injection of test mocks.")
+(defvar services--shell-command-fun 'shell-command
+  "Contains a `shell-command' function. Override this to your own value for mocking out shell calls in tests.")
 
-(defvar services--shell-command-to-string 'shell-command-to-string
-  "Dynamically bound alias for shell-command-to-string. This is to enable injection of test mocks.")
+(defvar services-shell-command-to-string-fun 'shell-command-to-string
+  "Contains a `shell-command-to-string' function. Override this to your own value for mocking out shell calls in tests.")
 
 ;; to be defined for each init system
 (defvar services--commands-alist nil
@@ -111,6 +111,14 @@ It will therefore also need to match the entries returned by `services--list-fun
   "Returns the headers for the list of all services"
   (funcall services--list-headers-fun))
 
+(defun services--shell-command (&rest args)
+  "Dynamically bound alias for `shell-command' (to enable test mocks)."
+  (apply services--shell-command-fun args))
+
+(defun services--shell-command-to-string (&rest args)
+  "Dynamically bound alias for `shell-command-to-string' (to enable test mocks)."
+  (apply services--shell-command-to-string-fun args))
+
 (defun services--service-at-point ()
   "Return the id of the service of the current line if in the list buffer.
 Otherwise, return value of services--current-id variable (set by services--run)."
@@ -131,7 +139,7 @@ Otherwise, return value of services--current-id variable (set by services--run).
       (insert (concat
                (propertize (format "Output of `%s` on `%s`:" command service-name) 'face 'underline)
                "\n\n"))
-      (funcall services--shell-command (funcall command-fun service-name) t)
+      (services--shell-command (funcall command-fun service-name) t)
       (services-output-mode))
     (when (not (equal (buffer-name) services--output-buffer-name))
       (switch-to-buffer-other-window services--output-buffer-name))))
@@ -144,16 +152,16 @@ Otherwise, return value of services--current-id variable (set by services--run).
 
 ;;;; To demo SysVinit support with mocked-out shell commands:
 ;; (setq services--init-system-submodule-path "./services-sysvinit.el")
-;; (setq services--shell-command-to-string (lambda (_) "
+;; (setq services--shell-command-to-string-fun (lambda (_) "
 ;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
 ;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
 ;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
-;; (setq services--shell-command (lambda (&rest _) (insert "service is fucking ded")))
+;; (setq services--shell-command-fun (lambda (&rest _) (insert "service is fucking ded")))
 
 (defun services-guess-init-system-submodule-path ()
   "Call \"which\" to identify an installed init system."
-  (cond ((= 0 (funcall services--shell-command "which systemctl")) "./services-systemd.el")
-        ((= 0 (funcall services--shell-command "which service")) "./services-sysvinit.el")
+  (cond ((= 0 (services--shell-command "which systemctl")) "./services-systemd.el")
+        ((= 0 (services--shell-command "which service")) "./services-sysvinit.el")
         (t (error "I'm sorry, your init system isn't supported yet!"))))
 
 (load-file (or services-init-system-submodule-path (services-guess-init-system-submodule-path)))
@@ -180,7 +188,7 @@ Otherwise, return value of services--current-id variable (set by services--run).
       (switch-to-buffer-other-window list-buffer)
       (when services-always-sudo
         ;; Become root, but hang out in a temp dir to minimise damage potential
-        (let ((tempdir (funcall services--shell-command-to-string "mktemp -d")))
+        (let ((tempdir (services--shell-command-to-string "mktemp -d")))
           (cd (format "/sudo::%s" tempdir))))
       (services-mode)
       (services-mode-refresh)
