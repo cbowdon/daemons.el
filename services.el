@@ -105,14 +105,15 @@ Otherwise, return value of service-id variable (set by services--run)."
       (switch-to-buffer-other-window services--output-buffer-name))))
 
 (defun services-status-at-point () (interactive) (services--run 'status))
-(defun services-show-at-point () (interactive) (services--run 'show))
 (defun services-start-at-point () (interactive) (services--run 'start))
 (defun services-stop-at-point () (interactive) (services--run 'stop))
 (defun services-restart-at-point () (interactive) (services--run 'restart))
 (defun services-reload-at-point () (interactive) (services--run 'reload))
 
-;; Start by supporting systemd
-(load-file "./services-systemd.el")
+;; Shitty prototype support for different init systems
+(if (file-exists-p "/etc/systemd")
+    (load-file "./services-systemd.el")
+  (load-file "./services-sysvinit.el"))
 
 ;; mode definitions
 (defun services-mode-refresh ()

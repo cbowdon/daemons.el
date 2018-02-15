@@ -1,4 +1,4 @@
-;;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
+;;; services-systemd.el --- UI for managing init system services -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2018 Chris Bowdon
 ;;
@@ -12,16 +12,15 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar services--commands-alist-systemd
-  '((show . (lambda (name) (format "systemctl show %s" name)))
-    (status . (lambda (name) (format "systemctl status %s" name)))
+(defvar services-systemd--commands-alist
+  '((status . (lambda (name) (format "systemctl status %s" name)))
     (start . (lambda (name) (format "systemctl start %s" name)))
     (stop . (lambda (name) (format "systemctl stop %s" name)))
     (restart . (lambda (name) (format "systemctl restart %s" name)))
     (reload . (lambda (name) (format "systemctl reload %s" name))))
   "Services commands alist for systemd")
 
-(defun services--systemd-parse-list (raw-systemctl-output)
+(defun services-systemd--parse-list-item (raw-systemctl-output)
   (seq-map
    (lambda (line)
      (let* ((parts (split-string line))
@@ -30,19 +29,17 @@
        (list name (vector name enabled))))
    raw-systemctl-output))
 
-(defun services--systemd-list ()
-  "Return an alist of services on a systemd system.
-  The car of each cons pair is the service name.
-  The cdr is a plist of extended properties (e.g. enabled/disabled status)."
+(defun services-systemd--list ()
+  "Return a list of services on a systemd system."
   (thread-last  "systemctl list-unit-files --type=service --no-legend"
     (shell-command-to-string)
     (split-lines)
-    (services--systemd-parse-list)))
+    (services-systemd--parse-list-item)))
 
-(defun services--systemd-list-headers ()
+(defun services-systemd--list-headers ()
   [("Service" 60 t)
    ("Enabled" 40 t)])
 
-(setq services--commands-alist services--commands-alist-systemd
-      services--list-fun 'services--systemd-list
-      services--list-headers-fun 'services--systemd-list-headers)
+(setq services--commands-alist services-systemd--commands-alist
+      services--list-fun 'services-systemd--list
+      services--list-headers-fun 'services-systemd--list-headers)
