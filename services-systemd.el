@@ -12,15 +12,14 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar services--commands-alist-systemd nil "Services commands alist for systemd")
-
-(setq services--commands-alist-systemd
-      '((show . (lambda (name) (format "systemctl show %s" name)))
-        (status . (lambda (name) (format "systemctl status %s" name)))
-        (start . (lambda (name) (format "systemctl start %s" name)))
-        (stop . (lambda (name) (format "systemctl stop %s" name)))
-        (restart . (lambda (name) (format "systemctl restart %s" name)))
-        (reload . (lambda (name) (format "systemctl reload %s" name)))))
+(defvar services--commands-alist-systemd
+  '((show . (lambda (name) (format "systemctl show %s" name)))
+    (status . (lambda (name) (format "systemctl status %s" name)))
+    (start . (lambda (name) (format "systemctl start %s" name)))
+    (stop . (lambda (name) (format "systemctl stop %s" name)))
+    (restart . (lambda (name) (format "systemctl restart %s" name)))
+    (reload . (lambda (name) (format "systemctl reload %s" name))))
+  "Services commands alist for systemd")
 
 (defun services--systemd-parse-list (raw-systemctl-output)
   (seq-map
@@ -31,7 +30,7 @@
        (list name (vector name enabled))))
    raw-systemctl-output))
 
-(defun services--systemd-list-all ()
+(defun services--systemd-list ()
   "Return an alist of services on a systemd system.
   The car of each cons pair is the service name.
   The cdr is a plist of extended properties (e.g. enabled/disabled status)."
@@ -40,5 +39,10 @@
     (split-lines)
     (services--systemd-parse-list)))
 
-(setq services--commands-alist services--commands-alist-systemd)
-(setq services--list-fun 'services--systemd-list-all)
+(defun services--systemd-list-headers ()
+  [("Service" 60 t)
+   ("Enabled" 40 t)])
+
+(setq services--commands-alist services--commands-alist-systemd
+      services--list-fun 'services--systemd-list
+      services--list-headers-fun 'services--systemd-list-headers)

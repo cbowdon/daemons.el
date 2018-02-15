@@ -50,6 +50,7 @@ enough that it's not worth choosing new bindings. But the choice is yours."
 ;; to be defined for each init system
 (defvar services--commands-alist nil "Services commands alist")
 (defvar services--list-fun nil "Function to list all services")
+(defvar services--list-headers-fun nil "Function to get headers for list of all services")
 
 (defvar services-mode-map
   (let ((map (make-sparse-keymap)))
@@ -70,8 +71,13 @@ enough that it's not worth choosing new bindings. But the choice is yours."
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
 
-(defun services--list-all ()
+(defun services--list ()
+  "Returns the list of all services"
   (funcall services--list-fun))
+
+(defun services--list-headers ()
+  "Returns the headers for the list of all services"
+  (funcall services--list-headers-fun))
 
 (defun services--service-at-point ()
   "Return the id of the service of the current line if in the list buffer.
@@ -111,14 +117,13 @@ Otherwise, return value of service-id variable (set by services--run)."
 ;; mode definitions
 (defun services-mode-refresh ()
   "Refresh the list of services."
-  (setq tabulated-list-entries 'services--list-all))
+  (setq tabulated-list-entries 'services--list))
 
 (define-derived-mode services-mode tabulated-list-mode
   "Services"
   "UI for viewing and controlling system services"
   :group 'services-mode-customization-group
-  (setq tabulated-list-format [("Service" 60 t)
-                               ("Enabled" 40 t)]
+  (setq tabulated-list-format (services--list-headers)
         tabulated-list-padding 2)
   (add-hook 'tabulated-list-revert-hook 'services-mode-refresh)
   (tabulated-list-init-header))
