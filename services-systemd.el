@@ -19,9 +19,10 @@
     (stop . (lambda (name) (format "systemctl stop %s" name)))
     (restart . (lambda (name) (format "systemctl restart %s" name)))
     (reload . (lambda (name) (format "systemctl reload %s" name))))
-  "Services commands alist for systemd")
+  "Services commands alist for systemd.")
 
 (defun services-systemd--parse-list-item (raw-systemctl-output)
+  "Parse a single line from RAW-SYSTEMCTL-OUTPUT into a tabulated list item."
   (let* ((parts (split-string raw-systemctl-output))
          (name (replace-regexp-in-string "\.service" "" (car parts)))
          (enabled (cadr parts)))
@@ -35,9 +36,12 @@
     (seq-map 'services-systemd--parse-list-item)))
 
 (defun services-systemd--list-headers ()
+  "Return the list of headers for a systemd services-mode buffer."
   [("Service" 60 t)
    ("Enabled" 40 t)])
 
 (setq services--commands-alist services-systemd--commands-alist
       services--list-fun 'services-systemd--list
       services--list-headers-fun 'services-systemd--list-headers)
+
+;;; services-systemd.el ends here

@@ -19,9 +19,10 @@
     (stop . (lambda (name) (format "service %s stop" name)))
     (restart . (lambda (name) (format "service %s restart" name)))
     (reload . (lambda (name) (format "service %s reload" name))))
-  "Services commands alist for SysVinit")
+  "Services commands alist for SysVinit.")
 
 (defun services-sysvinit--parse-list-item (raw-chkconfig-output)
+  "Parse a single line from RAW-CHKCONFIG-OUTPUT into a tabulated list item."
   (let* ((parts (split-string raw-chkconfig-output nil t))
          (name (car parts))
          (run-level-statuses (cdr parts)))
@@ -35,6 +36,7 @@
     (seq-map 'services-sysvinit--parse-list-item)))
 
 (defun services-sysvinit--list-headers ()
+  "Return the list of headers for a SysVinit services-mode buffer."
   (apply 'vector
          (cons '("Service" 40 t)
                (seq-map
@@ -45,3 +47,5 @@
 (setq services--commands-alist services-sysvinit--commands-alist
       services--list-fun 'services-sysvinit--list
       services--list-headers-fun 'services-sysvinit--list-headers)
+
+;;; services-sysvinit.el ends here
