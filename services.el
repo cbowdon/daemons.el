@@ -180,14 +180,6 @@ Otherwise, return value of services--current-id variable (set by services--run).
   (interactive)
   (services--run 'reload))
 
-;;;; To demo SysVinit support with mocked-out shell commands:
-;; (setq services--init-system-submodule 'services-sysvinit)
-;; (setq services--shell-command-to-string-fun (lambda (_) "
-;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
-;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
-;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
-;; (setq services--shell-command-fun (lambda (&rest _) (insert "service is fucking ded")))
-
 (defun services-guess-init-system-submodule ()
   "Call \"which\" to identify an installed init system."
   (cond ((= 0 (services--shell-command "which systemctl")) 'services-systemd)
@@ -207,6 +199,14 @@ Otherwise, return value of services--current-id variable (set by services--run).
         tabulated-list-padding 2)
   (add-hook 'tabulated-list-revert-hook 'services-mode-refresh)
   (tabulated-list-init-header))
+
+;; ;; To demo SysVinit support with mocked-out shell commands:
+;; (setq services-init-system-submodule 'services-sysvinit)
+;; (setq services--shell-command-to-string-fun (lambda (_) "
+;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
+;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
+;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
+;; (setq services--shell-command-fun (lambda (&rest _) (insert "service is fucking ded")))
 
 ;;;###autoload
 (defun services ()

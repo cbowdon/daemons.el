@@ -1,10 +1,10 @@
 * Services Mode
 
-This is an Emacs mode to give you a UI for managing init system services.
+This is an Emacs mode to give you a UI for managing init system services. I wrote this after getting tired of typing out =sudo service my_thing reload= all the time. It's also nice to have a consistent UI over different init systems.
 
 ** Init system support
 
-Only =systemd= and =SysVinit= right now, but it's designed to be extensible.
+Only systemd and SysVinit are supported right now, but it's designed to be [[extending][extensible]]. Fair warning: the systemd support is better-tested than SysVinit, since I'm developing on a systemd machine.
 
 ** Usage
 
@@ -22,19 +22,29 @@ The following commands are available for each service:
 | r   | Reload service      |
 | R   | Restart service     |
 
-Results of commands are displayed in a =special-mode= buffer, in which the same commands are available for the relevant service. You can dismiss it with =q=.
+Results of commands are displayed in a =special-mode= buffer, in which the same commands are available for the selected service. So you can (for example) keep reloading the same service with =r= without having to re-select it.
+
+You can dismiss either buffer with =q=.
+
+It looks something like this for systemd:
+
+[[./img/services-systemd-demo.png]]
+
+and something like this for SysVinit:
+
+[[./img/services-sysvinit-demo.png]]
 
 ** Installation
 
 Currently just =(load-file "/path/to/services.el")=.
 
-You could also clone the repo, then run =make= and =M-x package-install-file services-0.0.2= to install the package.
+You can also clone this repo, run =make= and then =M-x package-install-file services-0.0.2= to install the package via =package.el=.
 
 ** Configuration
 
 Please see =M-x customize-mode=.
 
-** Extending
+** Extending<<extending>>
 
 If you write a package that assigns
 
