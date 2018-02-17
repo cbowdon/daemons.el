@@ -4,7 +4,7 @@ This is an Emacs mode to give you a UI for managing init system services. I wrot
 
 ** Init system support
 
-Only systemd and SysVinit are supported right now, but it's designed to be [[extending][extensible]]. Fair warning: the systemd support is better-tested than SysVinit, since I'm developing on a systemd machine.
+Only systemd and SysVinit are supported right now, but it's designed to be extensible (see below). Fair warning: the systemd support is better-tested than SysVinit, since I'm developing on a systemd machine.
 
 ** Usage
 
@@ -44,7 +44,7 @@ You can also clone this repo, run =make= and then =M-x package-install-file serv
 
 Please see =M-x customize-mode=.
 
-** Extending<<extending>>
+** Extending
 
 If you write a package that assigns
 
