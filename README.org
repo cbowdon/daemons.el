@@ -28,6 +28,18 @@ Results of commands are displayed in a =special-mode= buffer, in which the same 
 
 Currently just =(load-file "/path/to/services.el")=.
 
+You could also clone the repo, then run =make= and =M-x package-install-file services-0.0.2= to install the package.
+
 ** Configuration
 
 Please see =M-x customize-mode=.
+
+** Extending
+
+If you write a package that assigns
+
+- =services--commands-alist=
+- =services--list-fun=
+- =services--list-headers-fun=
+
+to your own implementations and set custom variable =services-init-system-submodule= to that package then =M-x services= should just work for your system. You'll need to restart Emacs or manually load your package on first use.

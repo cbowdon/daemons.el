@@ -12,6 +12,8 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'seq)
+(require 'services)
 
 (defvar services-sysvinit--commands-alist
   '((status . (lambda (name) (format "service %s status" name)))
@@ -48,4 +50,5 @@
       services--list-fun 'services-sysvinit--list
       services--list-headers-fun 'services-sysvinit--list-headers)
 
+(provide 'services-sysvinit)
 ;;; services-sysvinit.el ends here

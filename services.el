@@ -11,9 +11,9 @@
 ;;
 ;; Created: February 13, 2018
 ;; Modified: February 13, 2018
-;; Version: 0.0.1
-;; Keywords: startup screen tools
-;; Package-Requires: ((emacs "25.3")
+;; Version: 0.0.2
+;; Keywords: services systemd sysvinit
+;; Package-Requires: ((seq "2.3"))
 ;;
 ;;; Commentary:
 ;; A UI for managing init system services.
@@ -49,17 +49,17 @@ enough that it's not worth choosing new bindings.  But the choice is yours."
   :type 'boolean
   :group 'services-mode-customization-group)
 
-(defcustom services-init-system-submodule-path nil
-  "Path to a Lisp file that implements specific commands for an init system.
-e.g. \"./services-systemd.el\".
+(defcustom services-init-system-submodule nil
+  "Lisp module that implements specific commands for an init system.
+e.g. 'services-systemd.
 Those specific commands are:
 
 - `services--commands-alist'
 - `services--list-fun'
 - `services--list-headers-fun'
 
-If this variable is nil then the init system will be guessed by `services-guess-init-system-submodule-path'."
-  :type '(file :must-match t)
+If this variable is nil then the init system will be guessed by `services-guess-init-system-submodule'."
+  :type 'symbol
   :group 'services-mode-customization-group)
 
 (defvar services--shell-command-fun 'shell-command
@@ -67,7 +67,7 @@ If this variable is nil then the init system will be guessed by `services-guess-
 
 Override this to your own value for mocking out shell calls in tests.")
 
-(defvar services-shell-command-to-string-fun 'shell-command-to-string
+(defvar services--shell-command-to-string-fun 'shell-command-to-string
   "Contains a `shell-command-to-string' function.
 Override this to your own value for mocking out shell calls in tests.")
 
@@ -181,20 +181,18 @@ Otherwise, return value of services--current-id variable (set by services--run).
   (services--run 'reload))
 
 ;;;; To demo SysVinit support with mocked-out shell commands:
-;; (setq services--init-system-submodule-path "./services-sysvinit.el")
+;; (setq services--init-system-submodule 'services-sysvinit)
 ;; (setq services--shell-command-to-string-fun (lambda (_) "
 ;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
 ;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
 ;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
 ;; (setq services--shell-command-fun (lambda (&rest _) (insert "service is fucking ded")))
 
-(defun services-guess-init-system-submodule-path ()
+(defun services-guess-init-system-submodule ()
   "Call \"which\" to identify an installed init system."
-  (cond ((= 0 (services--shell-command "which systemctl")) "./services-systemd.el")
-        ((= 0 (services--shell-command "which service")) "./services-sysvinit.el")
+  (cond ((= 0 (services--shell-command "which systemctl")) 'services-systemd)
+        ((= 0 (services--shell-command "which service")) 'services-sysvinit)
         (t (error "I'm sorry, your init system isn't supported yet!"))))
-
-(load-file (or services-init-system-submodule-path (services-guess-init-system-submodule-path)))
 
 ;; mode definitions
 (defun services-mode-refresh ()
@@ -210,6 +208,7 @@ Otherwise, return value of services--current-id variable (set by services--run).
   (add-hook 'tabulated-list-revert-hook 'services-mode-refresh)
   (tabulated-list-init-header))
 
+;;;###autoload
 (defun services ()
   "Open the list of system services for user management.
 
@@ -225,6 +224,8 @@ state of the service."
         ;; Become root, but hang out in a temp dir to minimise damage potential
         (let ((tempdir (services--shell-command-to-string "mktemp -d")))
           (cd (format "/sudo::%s" tempdir))))
+      (require (or services-init-system-submodule
+                   (services-guess-init-system-submodule)))
       (services-mode)
       (services-mode-refresh)
       (tabulated-list-print t t))))

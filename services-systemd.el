@@ -12,6 +12,8 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'seq)
+(require 'services)
 
 (defvar services-systemd--commands-alist
   '((status . (lambda (name) (format "systemctl status %s" name)))
@@ -44,4 +46,5 @@
       services--list-fun 'services-systemd--list
       services--list-headers-fun 'services-systemd--list-headers)
 
+(provide 'services-systemd)
 ;;; services-systemd.el ends here
