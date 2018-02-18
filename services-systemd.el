@@ -9,7 +9,14 @@
 ;;
 ;;; License: GPLv3
 ;;
+;; Created: February 13, 2018
+;; Modified: February 13, 2018
+;; Version: 0.0.2
+;; Keywords: unix convenience
+;; Package-Requires: ((emacs "25"))
+;;
 ;;; Commentary:
+;; This file provides systemd support for services-mode.
 
 ;;; Code:
 (require 'seq)
@@ -34,11 +41,11 @@
   "Return a list of services on a systemd system."
   (thread-last  "systemctl list-unit-files --type=service --no-legend"
     (services--shell-command-to-string)
-    (split-lines)
+    (services--split-lines)
     (seq-map 'services-systemd--parse-list-item)))
 
 (defun services-systemd--list-headers ()
-  "Return the list of headers for a systemd services-mode buffer."
+  "Return the list of headers for a systemd ‘services-mode’ buffer."
   [("Service" 60 t)
    ("Enabled" 40 t)])
 

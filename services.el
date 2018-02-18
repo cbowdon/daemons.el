@@ -1,4 +1,4 @@
-;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
+;;; services.el --- UI for managing init system services -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2018 Chris Bowdon
 ;;
@@ -12,15 +12,13 @@
 ;; Created: February 13, 2018
 ;; Modified: February 13, 2018
 ;; Version: 0.0.2
-;; Keywords: services systemd sysvinit
-;; Package-Requires: ((seq "2.3"))
+;; Keywords: unix convenience
+;; Package-Requires: ((emacs "25"))
 ;;
 ;;; Commentary:
 ;; A UI for managing init system services.
 
 ;;; Code:
-
-
 (require 'seq)
 
 ;; declarations
@@ -29,10 +27,11 @@
 
 ;; customization
 (defgroup services-mode-customization-group nil
-  "Customization group for Services mode")
+  "Customization group for Services mode"
+  :group 'services-mode)
 
 (defcustom services-always-sudo nil
-  "Whether to always attempt to sudo up in services-mode.
+  "Whether to always attempt to sudo up in ‘services-mode’.
 This defaults to off because in some systems at least you can query status
 without special privileges and will be prompted for a root password if you try
 anything else.  But at other times it's much more convenient to just assume sudo
@@ -43,7 +42,7 @@ Security wise - off is safer of course, to avoid unnecessary privilege."
   :group 'services-mode-customization-group)
 
 (defcustom services-do-no-evil t
-  "Whether to add services-mode(s) to evil-emacs-state-modes.
+  "Whether to add services-mode(s) to ‘evil-emacs-state-modes’.
 This is the author's preference - it's a special mode and these are ergonomic
 enough that it's not worth choosing new bindings.  But the choice is yours."
   :type 'boolean
@@ -108,7 +107,7 @@ It will therefore also need to match the entries returned by `services--list-fun
 (defvar services--current-id nil "Current service id.")
 
 ;; defuns
-(defun split-lines (string)
+(defun services--split-lines (string)
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
 
@@ -132,7 +131,7 @@ ARGS are passed to the underlying function."
 
 (defun services--service-at-point ()
   "Return the id of the service of the current line if in the list buffer.
-Otherwise, return value of services--current-id variable (set by services--run)."
+Otherwise, return value of ‘services--current-id’ variable (set by ‘services--run’)."
   (if (derived-mode-p 'tabulated-list-mode)
       (tabulated-list-get-id)
     services--current-id))
@@ -212,7 +211,7 @@ Otherwise, return value of services--current-id variable (set by services--run).
 (defun services ()
   "Open the list of system services for user management.
 
-This opens a services-mode list buffer.  Move the cursor to a service line and
+This opens a ‘services-mode’ list buffer.  Move the cursor to a service line and
 execute one of the commands in `describe-mode' to show status and manage the
 state of the service."
   (interactive)

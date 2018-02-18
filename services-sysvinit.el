@@ -9,7 +9,14 @@
 ;;
 ;;; License: GPLv3
 ;;
+;; Created: February 13, 2018
+;; Modified: February 13, 2018
+;; Version: 0.0.2
+;; Keywords: unix convenience
+;; Package-Requires: ((emacs "25"))
+;;
 ;;; Commentary:
+;; This file provides SysVinit support for services-mode.
 
 ;;; Code:
 (require 'seq)
@@ -34,11 +41,11 @@
   "Return a list of services on a SysVinit system."
   (thread-last "chkconfig --list"
     (services--shell-command-to-string)
-    (split-lines)
+    (services--split-lines)
     (seq-map 'services-sysvinit--parse-list-item)))
 
 (defun services-sysvinit--list-headers ()
-  "Return the list of headers for a SysVinit services-mode buffer."
+  "Return the list of headers for a SysVinit ‘services-mode’ buffer."
   (apply 'vector
          (cons '("Service" 40 t)
                (seq-map

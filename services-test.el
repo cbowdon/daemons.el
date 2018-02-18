@@ -2,7 +2,7 @@
 (load-file "./services.el")
 
 (ert-deftest split-lines-test ()
-  (should (equal '("this" "is" "a" "test") (split-lines "this
+  (should (equal '("this" "is" "a" "test") (services--split-lines "this
 is
 
 a
