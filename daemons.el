@@ -26,9 +26,9 @@
 (defconst daemons--output-buffer-name "*daemons-output*")
 
 ;; customization
-(defgroup daemons-mode-customization-group nil
+(defgroup daemons nil
   "Customization group for Daemons mode"
-  :group 'daemons-mode)
+  :group 'daemons)
 
 (defcustom daemons-always-sudo nil
   "Whether to always attempt to sudo up in ‘daemons-mode’.
@@ -39,7 +39,7 @@ powers when the buffer loads and enact everything as root.
 
 Security wise - off is safer of course, to avoid unnecessary privilege."
   :type 'boolean
-  :group 'daemons-mode-customization-group)
+  :group 'daemons)
 
 (defcustom daemons-init-system-submodule nil
   "Lisp module that implements specific commands for an init system.
@@ -52,7 +52,7 @@ Those specific commands are:
 
 If this variable is nil then the init system will be guessed by `daemons-guess-init-system-submodule'."
   :type 'symbol
-  :group 'daemons-mode-customization-group)
+  :group 'daemons)
 
 (defvar daemons--shell-command-fun 'shell-command
   "Contains a `shell-command' function.
@@ -186,7 +186,7 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
 (define-derived-mode daemons-mode tabulated-list-mode
   "Daemons"
   "UI for viewing and controlling system daemons"
-  :group 'daemons-mode-customization-group
+  :group 'daemons
   (setq tabulated-list-format (daemons--list-headers)
         tabulated-list-padding 2)
   (add-hook 'tabulated-list-revert-hook 'daemons-mode-refresh)
@@ -225,7 +225,7 @@ state of the daemon."
 (define-derived-mode daemons-output-mode special-mode
   "Daemons Output"
   "Mode for displaying output of Daemons commands"
-  :group 'daemons-mode-customization-group)
+  :group 'daemons)
 
 (provide 'daemons)
 ;;; daemons.el ends here
