@@ -1,9 +1,9 @@
-;;; services-systemd.el --- UI for managing init system services -*- lexical-binding: t -*-
+;;; daemons-systemd.el --- UI for managing init system daemons (services) -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2018 Chris Bowdon
 ;;
 ;; Author: Chris Bowdon
-;; URL: https://github.com/cbowdon/services-mode
+;; URL: https://github.com/cbowdon/daemons.el
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -16,42 +16,42 @@
 ;; Package-Requires: ((emacs "25"))
 ;;
 ;;; Commentary:
-;; This file provides systemd support for services-mode.
+;; This file provides systemd support for daemons.el.
 
 ;;; Code:
 (require 'seq)
-(require 'services)
+(require 'daemons)
 
-(defvar services-systemd--commands-alist
+(defvar daemons-systemd--commands-alist
   '((status . (lambda (name) (format "systemctl status %s" name)))
     (start . (lambda (name) (format "systemctl start %s" name)))
     (stop . (lambda (name) (format "systemctl stop %s" name)))
     (restart . (lambda (name) (format "systemctl restart %s" name)))
     (reload . (lambda (name) (format "systemctl reload %s" name))))
-  "Services commands alist for systemd.")
+  "Daemons commands alist for systemd.")
 
-(defun services-systemd--parse-list-item (raw-systemctl-output)
+(defun daemons-systemd--parse-list-item (raw-systemctl-output)
   "Parse a single line from RAW-SYSTEMCTL-OUTPUT into a tabulated list item."
   (let* ((parts (split-string raw-systemctl-output))
          (name (replace-regexp-in-string "\.service" "" (car parts)))
          (enabled (cadr parts)))
     (list name (vector name enabled))))
 
-(defun services-systemd--list ()
-  "Return a list of services on a systemd system."
+(defun daemons-systemd--list ()
+  "Return a list of daemons on a systemd system."
   (thread-last  "systemctl list-unit-files --type=service --no-legend"
-    (services--shell-command-to-string)
-    (services--split-lines)
-    (seq-map 'services-systemd--parse-list-item)))
+    (daemons--shell-command-to-string)
+    (daemons--split-lines)
+    (seq-map 'daemons-systemd--parse-list-item)))
 
-(defun services-systemd--list-headers ()
-  "Return the list of headers for a systemd ‘services-mode’ buffer."
-  [("Service" 60 t)
+(defun daemons-systemd--list-headers ()
+  "Return the list of headers for a systemd ‘daemons-mode’ buffer."
+  [("Daemon (service)" 60 t)
    ("Enabled" 40 t)])
 
-(setq services--commands-alist services-systemd--commands-alist
-      services--list-fun 'services-systemd--list
-      services--list-headers-fun 'services-systemd--list-headers)
+(setq daemons--commands-alist daemons-systemd--commands-alist
+      daemons--list-fun 'daemons-systemd--list
+      daemons--list-headers-fun 'daemons-systemd--list-headers)
 
-(provide 'services-systemd)
-;;; services-systemd.el ends here
+(provide 'daemons-systemd)
+;;; daemons-systemd.el ends here

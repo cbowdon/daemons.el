@@ -1,6 +1,6 @@
-FILES:=services.el services-pkg.el services-systemd.el services-sysvinit.el
+FILES:=daemons.el daemons-systemd.el daemons-sysvinit.el
 VERSION:=0.0.2
-PACKAGE_NAME:=services-$(VERSION)
+PACKAGE_NAME:=daemons-$(VERSION)
 
 all: $(PACKAGE_NAME).tar
 
