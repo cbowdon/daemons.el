@@ -40,7 +40,7 @@ and something like this for SysVinit:
 
 Currently just =(load-file "/path/to/daemons.el")=.
 
-You can also clone this repo, run =make= and then =M-x package-install-file daemons-0.0.2= to install the package via =package.el=.
+You can also clone this repo, run =make= and then =M-x package-install-file daemons-0.1.0= to install the package via =package.el=.
 
 ** Configuration
 
