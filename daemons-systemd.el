@@ -37,12 +37,17 @@
          (enabled (cadr parts)))
     (list name (vector name enabled))))
 
+(defun daemons-systemd--item-is-simple-service-p (item)
+  "Non-nil if ITEM (output of `daemons-systemd--parse-list-item') is not a template service."
+  (not (string-match-p "@$" (car item))))
+
 (defun daemons-systemd--list ()
   "Return a list of daemons on a systemd system."
   (thread-last  "systemctl list-unit-files --type=service --no-legend"
     (daemons--shell-command-to-string)
     (daemons--split-lines)
-    (seq-map 'daemons-systemd--parse-list-item)))
+    (seq-map 'daemons-systemd--parse-list-item)
+    (seq-filter 'daemons-systemd--item-is-simple-service-p)))
 
 (defun daemons-systemd--list-headers ()
   "Return the list of headers for a systemd ‘daemons-mode’ buffer."
