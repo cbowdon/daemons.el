@@ -129,48 +129,49 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
       (tabulated-list-get-id)
     daemons--current-id))
 
-(defun daemons--run (command)
-  "Run the given daemon COMMAND.  Show results in a temporary buffer."
-  (let ((daemon-name (daemons--daemon-at-point))
-        (command-fun (alist-get command daemons--commands-alist)))
+(defun daemons--insert-header (text)
+  "Insert an underlined TEXT header into the buffer."
+  (insert (concat (propertize text 'face 'underline) "\n\n")))
+
+(defun daemons--run (command daemon-name)
+  "Run the given COMMAND on DAEMON-NAME.  Show results in a temporary buffer."
+  (let ((command-fun (alist-get command daemons--commands-alist)))
     (when (not command-fun)
       (error "No such daemon command: %s" command))
     (with-current-buffer (get-buffer-create daemons--output-buffer-name)
       (setq buffer-read-only nil
             daemons--current-id daemon-name)
       (delete-region (point-min) (point-max))
-      (insert (concat
-               (propertize (format "Output of `%s` on `%s`:" command daemon-name) 'face 'underline)
-               "\n\n"))
+      (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
       (daemons--shell-command (funcall command-fun daemon-name) t)
       (daemons-output-mode))
     (when (not (equal (buffer-name) daemons--output-buffer-name))
       (switch-to-buffer-other-window daemons--output-buffer-name))))
 
-(defun daemons-status-at-point ()
-  "Show the status of the daemon at point in the daemons buffer."
-  (interactive)
-  (daemons--run 'status))
+(defun daemons-status-at-point (name)
+  "Show the status of the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run 'status name))
 
-(defun daemons-start-at-point ()
-  "Start the daemon at point in the daemons buffer."
-  (interactive)
-  (daemons--run 'start))
+(defun daemons-start-at-point (name)
+  "Start the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run 'start name))
 
-(defun daemons-stop-at-point ()
-  "Stop the daemon at point in the daemons buffer."
-  (interactive)
-  (daemons--run 'stop))
+(defun daemons-stop-at-point (name)
+  "Stop the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run 'stop name))
 
-(defun daemons-restart-at-point ()
-  "Restart the daemon at point in the daemons buffer."
-  (interactive)
-  (daemons--run 'restart))
+(defun daemons-restart-at-point (name)
+  "Restart the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run 'restart name))
 
-(defun daemons-reload-at-point ()
-  "Reload the daemon at point in the daemons buffer."
-  (interactive)
-  (daemons--run 'reload))
+(defun daemons-reload-at-point (name)
+  "Reload the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run 'reload name))
 
 (defun daemons-guess-init-system-submodule ()
   "Call \"which\" to identify an installed init system."
