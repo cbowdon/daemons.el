@@ -16,17 +16,19 @@ Navigate the list with =n= and =p=. Refresh the list with =g= (it's just a =tabu
 
 The following commands are available for each daemon:
 
-| Key | Command            |
-|-----+--------------------|
-| RET | Show daemon status |
-| s   | Start daemon       |
-| S   | Stop daemon        |
-| r   | Reload daemon      |
-| R   | Restart daemon     |
+| Command         | Key in =*daemons*= buffer |
+|-----------------+-------------------------|
+| =daemons-status=  | RET                     |
+| =daemons-start=   | s                       |
+| =daemons-stop=    | S                       |
+| =daemons-reload=  | r                       |
+| =daemons-restart= | R                       |
 
 Results of commands are displayed in a =special-mode= buffer, in which the same commands are available for the selected daemon. So you can (for example) keep reloading the same daemon with =r= without having to re-select it.
 
 You can dismiss either buffer with =q=.
+
+Of course you can also call the commands interactively, e.g. =M-x daemons-start= and enter the daemon's name at the prompt. The prompt has completion, so (for example) you can type =do= to narrow it down to =docker=, or =sys= to narrow it down to any of the 193 =systemd= services.
 
 It looks something like this for systemd:
 

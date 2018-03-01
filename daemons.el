@@ -105,11 +105,19 @@ It will therefore also need to match the entries returned by `daemons--list-fun'
   (split-string string "[\n\r]+" t))
 
 (defun daemons--list ()
-  "Return the list of all daemons."
+  "Return the list of all daemons.
+
+The precise format of the results will depend on the specific subcommand.
+It will be different for different init systems, and will match
+`daemons--list-headers'."
+  (daemons--require-init-system-submodule)
   (funcall daemons--list-fun))
 
 (defun daemons--list-headers ()
-  "Return the headers for the list of all daemons."
+  "Return the headers for the list of all daemons.
+
+The results will correspond to the format of each item in `daemons--list'."
+  (daemons--require-init-system-submodule)
   (funcall daemons--list-headers-fun))
 
 (defun daemons--shell-command (&rest args)
@@ -179,11 +187,51 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (interactive (list (daemons--daemon-at-point)))
   (daemons--run-with-output-buffer 'reload name))
 
+(defun daemons--completing-read ()
+  "Call `completing-read' with the current daemons list."
+  ;; TODO some caching
+  (completing-read "Daemon name: " (daemons--list)))
+
+;;;###autoload
+(defun daemons-status (name)
+  "Show the status of the daemon NAME."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'status name))
+
+;;;###autoload
+(defun daemons-start (name)
+  "Start the daemon NAME.  Show results in an output buffer."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'start name))
+
+;;;###autoload
+(defun daemons-stop (name)
+  "Stop the daemon NAME.  Show results in an output buffer."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'stop name))
+
+;;;###autoload
+(defun daemons-restart (name)
+  "Restart the daemon NAME.  Show results in an ouptut buffer."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'restart name))
+
+;;;###autoload
+(defun daemons-reload (name)
+  "Reload the daemon NAME.  Show results in an output buffer."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'reload name))
+
 (defun daemons-guess-init-system-submodule ()
   "Call \"which\" to identify an installed init system."
   (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
         ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
         (t (error "I'm sorry, your init system isn't supported yet!"))))
+
+(defun daemons--require-init-system-submodule ()
+  "Require the appropriate submodule for the init system."
+  (require (or daemons-init-system-submodule
+                   (daemons-guess-init-system-submodule))))
 
 ;; mode definitions
 (defun daemons-mode-refresh ()
@@ -223,8 +271,7 @@ state of the daemon."
         ;; Become root, but hang out in a temp dir to minimise damage potential
         (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
           (cd (format "/sudo::%s" tempdir))))
-      (require (or daemons-init-system-submodule
-                   (daemons-guess-init-system-submodule)))
+      (daemons--require-init-system-submodule)
       (daemons-mode)
       (daemons-mode-refresh)
       (tabulated-list-print t t))))
