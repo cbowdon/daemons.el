@@ -11,7 +11,7 @@
 ;;
 ;; Created: February 13, 2018
 ;; Modified: February 13, 2018
-;; Version: 0.2.0
+;; Version: 0.2.1
 ;; Keywords: unix convenience
 ;; Package-Requires: ((emacs "25"))
 ;;
@@ -96,7 +96,7 @@ It will therefore also need to match the entries returned by `daemons--list-fun'
     map)
   "Keymap for daemons mode.")
 
-(defvar daemons-output-mode-map daemons-mode-map "Keymap for daemons output mode.")
+(defvar daemons-output-mode-map (copy-keymap daemons-mode-map) "Keymap for daemons output mode.")
 (defvar daemons--current-id nil "ID of the daemon currently in the output buffer.")
 
 ;; defuns
