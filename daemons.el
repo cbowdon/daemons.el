@@ -97,7 +97,7 @@ It will therefore also need to match the entries returned by `daemons--list-fun'
   "Keymap for daemons mode.")
 
 (defvar daemons-output-mode-map daemons-mode-map "Keymap for daemons output mode.")
-(defvar daemons--current-id nil "Current daemon id.")
+(defvar daemons--current-id nil "ID of the daemon currently in the output buffer.")
 
 ;; defuns
 (defun daemons--split-lines (string)
@@ -133,45 +133,51 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
   "Insert an underlined TEXT header into the buffer."
   (insert (concat (propertize text 'face 'underline) "\n\n")))
 
+(defun daemons--run-with-output-buffer (command daemon-name)
+  "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
+
+The output buffer is in `daemons-output-mode' and will be switched to if not active."
+  (with-current-buffer (get-buffer-create daemons--output-buffer-name)
+    (setq buffer-read-only nil
+          daemons--current-id daemon-name)
+    (delete-region (point-min) (point-max))
+    (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
+    (daemons--run command daemon-name)
+    (daemons-output-mode))
+  (when (not (equal (buffer-name) daemons--output-buffer-name))
+    (switch-to-buffer-other-window daemons--output-buffer-name)))
+
 (defun daemons--run (command daemon-name)
-  "Run the given COMMAND on DAEMON-NAME.  Show results in a temporary buffer."
+  "Run the given COMMAND on DAEMON-NAME.  Insert the results into the current buffer."
   (let ((command-fun (alist-get command daemons--commands-alist)))
     (when (not command-fun)
       (error "No such daemon command: %s" command))
-    (with-current-buffer (get-buffer-create daemons--output-buffer-name)
-      (setq buffer-read-only nil
-            daemons--current-id daemon-name)
-      (delete-region (point-min) (point-max))
-      (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
-      (daemons--shell-command (funcall command-fun daemon-name) t)
-      (daemons-output-mode))
-    (when (not (equal (buffer-name) daemons--output-buffer-name))
-      (switch-to-buffer-other-window daemons--output-buffer-name))))
+    (daemons--shell-command (funcall command-fun daemon-name) t)))
 
 (defun daemons-status-at-point (name)
   "Show the status of the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
-  (daemons--run 'status name))
+  (daemons--run-with-output-buffer 'status name))
 
 (defun daemons-start-at-point (name)
   "Start the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
-  (daemons--run 'start name))
+  (daemons--run-with-output-buffer 'start name))
 
 (defun daemons-stop-at-point (name)
   "Stop the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
-  (daemons--run 'stop name))
+  (daemons--run-with-output-buffer 'stop name))
 
 (defun daemons-restart-at-point (name)
   "Restart the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
-  (daemons--run 'restart name))
+  (daemons--run-with-output-buffer 'restart name))
 
 (defun daemons-reload-at-point (name)
   "Reload the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
-  (daemons--run 'reload name))
+  (daemons--run-with-output-buffer 'reload name))
 
 (defun daemons-guess-init-system-submodule ()
   "Call \"which\" to identify an installed init system."
