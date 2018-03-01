@@ -40,9 +40,10 @@ and something like this for SysVinit:
 
 ** Installation
 
-Currently just =(load-file "/path/to/daemons.el")=.
+1. Download the [[https://github.com/cbowdon/daemons.el/releases][latest release distribution]] and *extract*.
+2. Install with =M-x package-install-file= - at the prompt, pass the path to the extracted directory, e.g. =~/Downloads/daemons.el-VERSION/=.
 
-You can also clone this repo, run =make= and then =M-x package-install-file daemons-0.2.0= to install the package via =package.el=.
+A PR to get this into MELPA is in progress.
 
 ** Configuration
 
