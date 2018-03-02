@@ -1,4 +1,4 @@
-* daemons.el
+* daemons.el [[https://melpa.org/#/daemons][file:https://melpa.org/packages/daemons-badge.svg]] [[https://stable.melpa.org/#/daemons][file:https://stable.melpa.org/packages/daemons-badge.svg]]
 
 This is an Emacs mode to give you a UI for managing init system daemons (services). I wrote this after getting tired of typing out =sudo service my_thing reload= all the time. It's also nice to have a consistent UI over different init systems.
 
@@ -40,10 +40,12 @@ and something like this for SysVinit:
 
 ** Installation
 
+You can install this from [[https://melpa.org][MELPA]] with =M-x package-install daemons=. See [[https://melpa.org/#/getting-started][here]] for how to get started with MELPA.
+
+If for some reason you are unable or prefer not to use MELPA, you can also do this:
+
 1. Download the [[https://github.com/cbowdon/daemons.el/releases][latest release distribution]] and *extract*.
 2. Install with =M-x package-install-file= - at the prompt, pass the path to the extracted directory, e.g. =~/Downloads/daemons.el-VERSION/=.
-
-A PR to get this into MELPA is in progress.
 
 ** Configuration
 
