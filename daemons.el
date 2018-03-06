@@ -242,7 +242,8 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
 ;; mode definitions
 (defun daemons-mode-refresh ()
   "Refresh the list of daemons."
-  (setq tabulated-list-entries 'daemons--list))
+  (with-current-buffer (get-buffer-create daemons--list-buffer-name)
+    (setq-local tabulated-list-entries 'daemons--list)))
 
 (define-derived-mode daemons-mode tabulated-list-mode
   "Daemons"
