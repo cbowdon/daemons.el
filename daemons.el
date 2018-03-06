@@ -148,6 +148,7 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (with-current-buffer (get-buffer-create daemons--output-buffer-name)
     (setq buffer-read-only nil
           daemons--current-id daemon-name)
+    (when daemons-always-sudo (daemons--sudo))
     (delete-region (point-min) (point-max))
     (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
     (daemons--run command daemon-name)
@@ -233,6 +234,11 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (require (or daemons-init-system-submodule
                    (daemons-guess-init-system-submodule))))
 
+(defun daemons--sudo ()
+  "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
+  (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
+    (cd (format "/sudo::%s" tempdir))))
+
 ;; mode definitions
 (defun daemons-mode-refresh ()
   "Refresh the list of daemons."
@@ -267,10 +273,7 @@ state of the daemon."
     (with-current-buffer list-buffer
       (display-buffer-pop-up-window list-buffer nil)
       (switch-to-buffer-other-window list-buffer)
-      (when daemons-always-sudo
-        ;; Become root, but hang out in a temp dir to minimise damage potential
-        (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
-          (cd (format "/sudo::%s" tempdir))))
+      (when daemons-always-sudo (daemons--sudo))
       (daemons--require-init-system-submodule)
       (daemons-mode)
       (daemons-mode-refresh)
