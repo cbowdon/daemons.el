@@ -6,7 +6,7 @@ N.B. This package was briefly known as =services-mode=.
 
 ** Init system support
 
-Only systemd and SysVinit are supported right now, but it's designed to be extensible (see below). Fair warning: the systemd support is better-tested than SysVinit, since I'm developing on a systemd machine.
+Only systemd and SysVinit are supported right now, but it's designed to be extensible (see below).
 
 ** Usage
 
@@ -49,7 +49,7 @@ If for some reason you are unable or prefer not to use MELPA, you can also do th
 
 ** Configuration
 
-Please see =M-x customize-mode=.
+Please see =M-x customize-mode=. If you are having trouble with permissions for SysV then setting the =daemons-always-sudo= custom variable may be what you need.
 
 ** Extending
 
