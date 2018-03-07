@@ -11,6 +11,7 @@ There is support for the following init systems and service managers:
 - systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch)
 - SysVinit (RHEL6)
 - [[https://github.com/Homebrew/homebrew-services][brew services (macOS)]]
+- GNU Shepherd for user services.
 
 It's designed to be easily extensible (see below) so if your system isn't supported please consider contributing.
 

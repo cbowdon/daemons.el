@@ -1,4 +1,4 @@
-FILES:=daemons.el daemons-systemd.el daemons-sysvinit.el
+FILES:=daemons.el daemons-systemd.el daemons-sysvinit.el daemons-shepherd.el
 VERSION:=1.1.0
 PACKAGE_NAME:=daemons-$(VERSION)
 
@@ -12,4 +12,3 @@ $(PACKAGE_NAME).tar: clean $(FILES)
 clean:
 	rm -f $(PACKAGE_NAME).tar
 	rm -rf $(PACKAGE_NAME)
-
