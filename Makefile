@@ -1,5 +1,5 @@
 FILES:=daemons.el daemons-systemd.el daemons-sysvinit.el
-VERSION:=1.0.0
+VERSION:=1.1.0
 PACKAGE_NAME:=daemons-$(VERSION)
 
 all: $(PACKAGE_NAME).tar
