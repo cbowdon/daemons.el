@@ -4,9 +4,15 @@ This is an Emacs mode to give you a UI for managing init system daemons (service
 
 N.B. This package was briefly known as =services-mode=.
 
-** Init system support
+** System support
 
-Only systemd and SysVinit are supported right now, but it's designed to be extensible (see below).
+There is support for the following init systems and service managers:
+
+- systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch)
+- SysVinit (RHEL6)
+- [[https://github.com/Homebrew/homebrew-services][brew services (macOS)]]
+
+It's designed to be easily extensible (see below) so if your system isn't supported please consider contributing.
 
 ** Usage
 
