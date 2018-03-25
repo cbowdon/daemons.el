@@ -21,10 +21,6 @@
 ;;; Code:
 (require 'seq)
 
-;; declarations
-(defconst daemons--list-buffer-name "*daemons*")
-(defconst daemons--output-buffer-name "*daemons-output*")
-
 ;; customization
 (defgroup daemons nil
   "Customization group for Daemons mode"
@@ -54,6 +50,7 @@ If this variable is nil then the init system will be guessed by `daemons-guess-i
   :type 'symbol
   :group 'daemons)
 
+;; declarations
 (defvar daemons--shell-command-fun 'shell-command
   "Contains a `shell-command' function.
 
@@ -96,13 +93,25 @@ It will therefore also need to match the entries returned by `daemons--list-fun'
     map)
   "Keymap for daemons mode.")
 
-(defvar daemons-output-mode-map (copy-keymap daemons-mode-map) "Keymap for daemons output mode.")
-(defvar daemons--current-id nil "ID of the daemon currently in the output buffer.")
+(defvar daemons-output-mode-map (copy-keymap daemons-mode-map)
+  "Keymap for daemons output mode.")
+
+;; TODO this needs to become buffer-local
+(defvar daemons--current-id nil
+  "ID of the daemon in the current output buffer.")
 
 ;; defuns
 (defun daemons--split-lines (string)
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
+
+(defun daemons--get-list-buffer-name (hostname)
+  "Return the buffer name for daemons on HOSTNAME."
+  (format "*daemons on %s*" hostname))
+
+(defun daemons--get-output-buffer-name (hostname)
+  "Return the buffer name for daemons output on HOSTNAME."
+  (format   "*daemons-output on %s*" hostname))
 
 (defun daemons--list ()
   "Return the list of all daemons.
@@ -145,7 +154,7 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
 
 The output buffer is in `daemons-output-mode' and will be switched to if not active."
-  (with-current-buffer (get-buffer-create daemons--output-buffer-name)
+  (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name "localhost"))
     (setq buffer-read-only nil
           daemons--current-id daemon-name)
     (when daemons-always-sudo (daemons--sudo))
@@ -153,8 +162,8 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
     (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
     (daemons--run command daemon-name)
     (daemons-output-mode))
-  (when (not (equal (buffer-name) daemons--output-buffer-name))
-    (switch-to-buffer-other-window daemons--output-buffer-name)))
+  (when (not (equal (buffer-name) (daemons--get-output-buffer-name "localhost")))
+    (switch-to-buffer-other-window (daemons--get-output-buffer-name "localhost"))))
 
 (defun daemons--run (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Insert the results into the current buffer."
@@ -243,7 +252,7 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
 ;; mode definitions
 (defun daemons-mode-refresh ()
   "Refresh the list of daemons."
-  (with-current-buffer (get-buffer-create daemons--list-buffer-name)
+  (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))
     (setq-local tabulated-list-entries 'daemons--list)))
 
 (define-derived-mode daemons-mode tabulated-list-mode
@@ -271,7 +280,7 @@ This opens a ‘daemons-mode’ list buffer.  Move the cursor to a daemon line a
 execute one of the commands in `describe-mode' to show status and manage the
 state of the daemon."
   (interactive)
-  (let ((list-buffer (get-buffer-create daemons--list-buffer-name)))
+  (let ((list-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))))
     (with-current-buffer list-buffer
       (display-buffer-pop-up-window list-buffer nil)
       (switch-to-buffer-other-window list-buffer)
