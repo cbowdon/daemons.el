@@ -178,6 +178,29 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
       (error "No such daemon command: %s" command))
     (daemons--shell-command (funcall command-fun daemon-name) t)))
 
+(defun daemons-guess-init-system-submodule ()
+  "Call \"which\" to identify an installed init system."
+  (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
+        ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
+        ((= 0 (daemons--shell-command "which brew")) 'daemons-brew)
+        (t (error "I'm sorry, your init system isn't supported yet!"))))
+
+(defun daemons--require-init-system-submodule ()
+  "Require the appropriate submodule for the init system."
+  (require (or daemons-init-system-submodule
+                   (daemons-guess-init-system-submodule))))
+
+(defun daemons--sudo ()
+  "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
+  (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
+    (cd (format "/sudo::%s" tempdir))))
+
+(defun daemons--refresh-list ()
+  "Refresh the list of daemons."
+  (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))
+    (setq-local tabulated-list-entries 'daemons--list)))
+
+;; interactive functions
 (defun daemons-status-at-point (name)
   "Show the status of the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
@@ -238,46 +261,6 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (interactive (list (daemons--completing-read)))
   (daemons--run-with-output-buffer 'reload name))
 
-(defun daemons-guess-init-system-submodule ()
-  "Call \"which\" to identify an installed init system."
-  (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
-        ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
-        ((= 0 (daemons--shell-command "which brew")) 'daemons-brew)
-        (t (error "I'm sorry, your init system isn't supported yet!"))))
-
-(defun daemons--require-init-system-submodule ()
-  "Require the appropriate submodule for the init system."
-  (require (or daemons-init-system-submodule
-                   (daemons-guess-init-system-submodule))))
-
-(defun daemons--sudo ()
-  "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
-  (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
-    (cd (format "/sudo::%s" tempdir))))
-
-;; mode definitions
-(defun daemons-mode-refresh ()
-  "Refresh the list of daemons."
-  (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))
-    (setq-local tabulated-list-entries 'daemons--list)))
-
-(define-derived-mode daemons-mode tabulated-list-mode
-  "Daemons"
-  "UI for viewing and controlling system daemons"
-  :group 'daemons
-  (setq tabulated-list-format (daemons--list-headers)
-        tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook 'daemons-mode-refresh)
-  (tabulated-list-init-header))
-
-;; ;; To demo SysVinit support with mocked-out shell commands:
-;; (setq daemons-init-system-submodule 'daemons-sysvinit)
-;; (setq daemons--shell-command-to-string-fun (lambda (_) "
-;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
-;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
-;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
-;; (setq daemons--shell-command-fun (lambda (&rest _) (insert "daemon is fucking ded")))
-
 ;;;###autoload
 (defun daemons ()
   "Open the list of system daemons (services) for user management.
@@ -293,8 +276,26 @@ state of the daemon."
       (when daemons-always-sudo (daemons--sudo))
       (daemons--require-init-system-submodule)
       (daemons-mode)
-      (daemons-mode-refresh)
+      (daemons--refresh-list)
       (tabulated-list-print t t))))
+
+;; mode definitions
+(define-derived-mode daemons-mode tabulated-list-mode
+  "Daemons"
+  "UI for viewing and controlling system daemons"
+  :group 'daemons
+  (setq tabulated-list-format (daemons--list-headers)
+        tabulated-list-padding 2)
+  (add-hook 'tabulated-list-revert-hook 'daemons--refresh-list)
+  (tabulated-list-init-header))
+
+;; ;; To demo SysVinit support with mocked-out shell commands:
+;; (setq daemons-init-system-submodule 'daemons-sysvinit)
+;; (setq daemons--shell-command-to-string-fun (lambda (_) "
+;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
+;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
+;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
+;; (setq daemons--shell-command-fun (lambda (&rest _) (insert "daemon is fucking ded")))
 
 (define-derived-mode daemons-output-mode special-mode
   "Daemons Output"
