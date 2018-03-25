@@ -150,20 +150,26 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
   "Insert an underlined TEXT header into the buffer."
   (insert (concat (propertize text 'face 'underline) "\n\n")))
 
+(defun daemons--switch-output-buffer-create (hostname)
+  "Switch to output buffer for HOSTNAME if it exists, else create it and switch."
+  (let ((output-buffer-name (daemons--get-output-buffer-name hostname)))
+    (when (not (equal (buffer-name) output-buffer-name))
+      (switch-to-buffer-other-window output-buffer-name))))
+
 (defun daemons--run-with-output-buffer (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
 
 The output buffer is in `daemons-output-mode' and will be switched to if not active."
-  (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name "localhost"))
-    (setq buffer-read-only nil
-          daemons--current-id daemon-name)
-    (when daemons-always-sudo (daemons--sudo))
-    (delete-region (point-min) (point-max))
-    (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
-    (daemons--run command daemon-name)
-    (daemons-output-mode))
-  (when (not (equal (buffer-name) (daemons--get-output-buffer-name "localhost")))
-    (switch-to-buffer-other-window (daemons--get-output-buffer-name "localhost"))))
+  (let ((hostname "localhost"))
+    (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name hostname))
+      (setq buffer-read-only nil
+            daemons--current-id daemon-name)
+      (when daemons-always-sudo (daemons--sudo))
+      (delete-region (point-min) (point-max))
+      (daemons--insert-header (format "Output of `%s` on `%s` (%s):" command daemon-name hostname))
+      (daemons--run command daemon-name)
+      (daemons-output-mode))
+    (daemons--switch-output-buffer-create hostname)))
 
 (defun daemons--run (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Insert the results into the current buffer."
