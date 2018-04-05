@@ -21,10 +21,6 @@
 ;;; Code:
 (require 'seq)
 
-;; declarations
-(defconst daemons--list-buffer-name "*daemons*")
-(defconst daemons--output-buffer-name "*daemons-output*")
-
 ;; customization
 (defgroup daemons nil
   "Customization group for Daemons mode"
@@ -54,6 +50,7 @@ If this variable is nil then the init system will be guessed by `daemons-guess-i
   :type 'symbol
   :group 'daemons)
 
+;; declarations
 (defvar daemons--shell-command-fun 'shell-command
   "Contains a `shell-command' function.
 
@@ -96,13 +93,25 @@ It will therefore also need to match the entries returned by `daemons--list-fun'
     map)
   "Keymap for daemons mode.")
 
-(defvar daemons-output-mode-map (copy-keymap daemons-mode-map) "Keymap for daemons output mode.")
-(defvar daemons--current-id nil "ID of the daemon currently in the output buffer.")
+(defvar daemons-output-mode-map (copy-keymap daemons-mode-map)
+  "Keymap for daemons output mode.")
+
+;; TODO this needs to become buffer-local
+(defvar daemons--current-id nil
+  "ID of the daemon in the current output buffer.")
 
 ;; defuns
 (defun daemons--split-lines (string)
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
+
+(defun daemons--get-list-buffer-name (hostname)
+  "Return the buffer name for daemons on HOSTNAME."
+  (format "*daemons on %s*" hostname))
+
+(defun daemons--get-output-buffer-name (hostname)
+  "Return the buffer name for daemons output on HOSTNAME."
+  (format   "*daemons-output on %s*" hostname))
 
 (defun daemons--list ()
   "Return the list of all daemons.
@@ -141,20 +150,26 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
   "Insert an underlined TEXT header into the buffer."
   (insert (concat (propertize text 'face 'underline) "\n\n")))
 
+(defun daemons--switch-output-buffer-create (hostname)
+  "Switch to output buffer for HOSTNAME if it exists, else create it and switch."
+  (let ((output-buffer-name (daemons--get-output-buffer-name hostname)))
+    (when (not (equal (buffer-name) output-buffer-name))
+      (switch-to-buffer-other-window output-buffer-name))))
+
 (defun daemons--run-with-output-buffer (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
 
 The output buffer is in `daemons-output-mode' and will be switched to if not active."
-  (with-current-buffer (get-buffer-create daemons--output-buffer-name)
-    (setq buffer-read-only nil
-          daemons--current-id daemon-name)
-    (when daemons-always-sudo (daemons--sudo))
-    (delete-region (point-min) (point-max))
-    (daemons--insert-header (format "Output of `%s` on `%s`:" command daemon-name))
-    (daemons--run command daemon-name)
-    (daemons-output-mode))
-  (when (not (equal (buffer-name) daemons--output-buffer-name))
-    (switch-to-buffer-other-window daemons--output-buffer-name)))
+  (let ((hostname "localhost"))
+    (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name hostname))
+      (setq buffer-read-only nil
+            daemons--current-id daemon-name)
+      (when daemons-always-sudo (daemons--sudo))
+      (delete-region (point-min) (point-max))
+      (daemons--insert-header (format "Output of `%s` on `%s` (%s):" command daemon-name hostname))
+      (daemons--run command daemon-name)
+      (daemons-output-mode))
+    (daemons--switch-output-buffer-create hostname)))
 
 (defun daemons--run (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Insert the results into the current buffer."
@@ -163,6 +178,29 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
       (error "No such daemon command: %s" command))
     (daemons--shell-command (funcall command-fun daemon-name) t)))
 
+(defun daemons-guess-init-system-submodule ()
+  "Call \"which\" to identify an installed init system."
+  (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
+        ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
+        ((= 0 (daemons--shell-command "which brew")) 'daemons-brew)
+        (t (error "I'm sorry, your init system isn't supported yet!"))))
+
+(defun daemons--require-init-system-submodule ()
+  "Require the appropriate submodule for the init system."
+  (require (or daemons-init-system-submodule
+                   (daemons-guess-init-system-submodule))))
+
+(defun daemons--sudo ()
+  "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
+  (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
+    (cd (format "/sudo::%s" tempdir))))
+
+(defun daemons--refresh-list ()
+  "Refresh the list of daemons."
+  (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))
+    (setq-local tabulated-list-entries 'daemons--list)))
+
+;; interactive functions
 (defun daemons-status-at-point (name)
   "Show the status of the daemon NAME at point in the daemons buffer."
   (interactive (list (daemons--daemon-at-point)))
@@ -223,36 +261,32 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (interactive (list (daemons--completing-read)))
   (daemons--run-with-output-buffer 'reload name))
 
-(defun daemons-guess-init-system-submodule ()
-  "Call \"which\" to identify an installed init system."
-  (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
-        ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
-        ((= 0 (daemons--shell-command "which brew")) 'daemons-brew)
-        (t (error "I'm sorry, your init system isn't supported yet!"))))
+;;;###autoload
+(defun daemons ()
+  "Open the list of system daemons (services) for user management.
 
-(defun daemons--require-init-system-submodule ()
-  "Require the appropriate submodule for the init system."
-  (require (or daemons-init-system-submodule
-                   (daemons-guess-init-system-submodule))))
-
-(defun daemons--sudo ()
-  "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
-  (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
-    (cd (format "/sudo::%s" tempdir))))
+This opens a ‘daemons-mode’ list buffer.  Move the cursor to a daemon line and
+execute one of the commands in `describe-mode' to show status and manage the
+state of the daemon."
+  (interactive)
+  (let ((list-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))))
+    (with-current-buffer list-buffer
+      (display-buffer-pop-up-window list-buffer nil)
+      (switch-to-buffer-other-window list-buffer)
+      (when daemons-always-sudo (daemons--sudo))
+      (daemons--require-init-system-submodule)
+      (daemons-mode)
+      (daemons--refresh-list)
+      (tabulated-list-print t t))))
 
 ;; mode definitions
-(defun daemons-mode-refresh ()
-  "Refresh the list of daemons."
-  (with-current-buffer (get-buffer-create daemons--list-buffer-name)
-    (setq-local tabulated-list-entries 'daemons--list)))
-
 (define-derived-mode daemons-mode tabulated-list-mode
   "Daemons"
   "UI for viewing and controlling system daemons"
   :group 'daemons
   (setq tabulated-list-format (daemons--list-headers)
         tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook 'daemons-mode-refresh)
+  (add-hook 'tabulated-list-revert-hook 'daemons--refresh-list)
   (tabulated-list-init-header))
 
 ;; ;; To demo SysVinit support with mocked-out shell commands:
@@ -262,24 +296,6 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
 ;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
 ;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
 ;; (setq daemons--shell-command-fun (lambda (&rest _) (insert "daemon is fucking ded")))
-
-;;;###autoload
-(defun daemons ()
-  "Open the list of system daemons (services) for user management.
-
-This opens a ‘daemons-mode’ list buffer.  Move the cursor to a daemon line and
-execute one of the commands in `describe-mode' to show status and manage the
-state of the daemon."
-  (interactive)
-  (let ((list-buffer (get-buffer-create daemons--list-buffer-name)))
-    (with-current-buffer list-buffer
-      (display-buffer-pop-up-window list-buffer nil)
-      (switch-to-buffer-other-window list-buffer)
-      (when daemons-always-sudo (daemons--sudo))
-      (daemons--require-init-system-submodule)
-      (daemons-mode)
-      (daemons-mode-refresh)
-      (tabulated-list-print t t))))
 
 (define-derived-mode daemons-output-mode special-mode
   "Daemons Output"
