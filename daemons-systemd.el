@@ -42,7 +42,7 @@
     (seq-filter 'daemons-systemd--item-is-simple-service-p)))
 
 (daemons-define-submodule daemons-systemd
-  "Daemons submodule for systemd"
+  "Daemons submodule for systemd."
 
   :test (and (eq system-type 'gnu/linux)
              (equal 0 (daemons--shell-command "which systemd")))
@@ -56,10 +56,6 @@
   :list (daemons-systemd--list)
 
   :headers [("Daemon (service)" 60 t) ("Enabled" 40 t)])
-
-(setq daemons--commands-alist (plist-get (daemons--get-submodule 'daemons-systemd) :commands)
-      daemons--list-fun (plist-get (daemons--get-submodule 'daemons-systemd) :list)
-      daemons--list-headers-fun (plist-get (daemons--get-submodule 'daemons-systemd) :headers))
 
 (provide 'daemons-systemd)
 ;;; daemons-systemd.el ends here

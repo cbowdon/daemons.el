@@ -1,4 +1,4 @@
-FILES:=daemons.el daemons-systemd.el daemons-sysvinit.el daemons-shepherd.el
+FILES:=daemons.el daemons-systemd.el daemons-sysvinit.el daemons-shepherd.el daemons-brew.el
 VERSION:=1.1.0
 PACKAGE_NAME:=daemons-$(VERSION)
 

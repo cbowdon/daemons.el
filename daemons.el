@@ -39,7 +39,8 @@ Security wise - off is safer of course, to avoid unnecessary privilege."
 
 (defcustom daemons-init-system-submodules '(daemons-systemd
                                             daemons-sysvinit
-                                            daemons-brew)
+                                            daemons-brew
+                                            daemons-shepherd)
   "List of available init system submodules for `daemons'.
 When running `daemons' each of these will be `required'd and the \"test\" form
 in each will be evaluated to determine if it is the right backend to use for

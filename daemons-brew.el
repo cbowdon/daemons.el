@@ -13,7 +13,7 @@
 ;; Modified: Mar 10, 2018
 ;; Version: 1.1.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25.1"))
 ;;
 ;;; Commentary:
 ;; This file provides support for the MacOS "brew services" tool to
@@ -22,13 +22,6 @@
 ;;; Code:
 (require 'seq)
 (require 'daemons)
-
-(defvar daemons-brew--commands-alist
-  '((status . (lambda (name) (format "brew services list %s" name)))
-    (start . (lambda (name) (format "brew services start %s" name)))
-    (stop . (lambda (name) (format "brew services stop %s" name)))
-    (restart . (lambda (name) (format "brew services restart %s" name))))
-  "Daemons commands alist for Brew.")
 
 (defun daemons-brew--parse-list-item (output)
   "Parse a single line from OUTPUT into a tabulated list item."
@@ -55,9 +48,21 @@
                '("User" 10 t)
                '("Plist" 50 t))))
 
-(setq daemons--commands-alist daemons-brew--commands-alist
-      daemons--list-fun 'daemons-brew--list
-      daemons--list-headers-fun 'daemons-brew--list-headers)
+(daemons-define-submodule daemons-brew
+  "Daemons module for brew services."
+
+  :test (and (eq system-type 'darwin)
+             (equal 0 (daemons--shell-command "which brew")))
+
+  :commands
+  '((status . (lambda (name) (format "brew services list %s" name)))
+    (start . (lambda (name) (format "brew services start %s" name)))
+    (stop . (lambda (name) (format "brew services stop %s" name)))
+    (restart . (lambda (name) (format "brew services restart %s" name))))
+
+  :list (daemons-brew--list)
+
+  :headers (daemons-brew--list-headers))
 
 (provide 'daemons-brew)
 ;;; daemons-brew.el ends here

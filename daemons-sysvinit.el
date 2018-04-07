@@ -46,7 +46,7 @@
                 (number-sequence 0 6)))))
 
 (daemons-define-submodule daemons-sysvinit
-  "Daemons submodule for SysVinit"
+  "Daemons submodule for SysVinit."
 
   :test (and (eq system-type 'gnu/linux)
              (equal 0 (daemons--shell-command "which service")))
