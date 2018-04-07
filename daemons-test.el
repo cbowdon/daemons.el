@@ -34,6 +34,23 @@ test
          (lambda (cmd &rest _) (if (equal cmd "which systemctl") 0 1))))
     (should (equal 'daemons-systemd (daemons-guess-init-system-submodule)))))
 
+(ert-deftest daemons-define-submodule-test ()
+  "A correct definition should populate `daemons--init-system-submodules-alist'."
+  (let ((expected (list :docstring "Test: happy path submodule"
+                        :test (lambda () t)
+                        :commands nil
+                        :list (lambda () nil)
+                        :headers (lambda () []))))
+    (daemons-define-submodule daemons-happy
+      "Test: happy path submodule"
+      :test t
+      :commands nil
+      :headers []
+      :list nil)
+    (should (equal expected
+                   (alist-get 'daemons-happy
+                              daemons--init-system-submodules-alist)))))
+
 ;; system-specific tests
 (dolist (test-suite (directory-files "." t "daemons-.*-test\.el$"))
   (load-file test-suite)

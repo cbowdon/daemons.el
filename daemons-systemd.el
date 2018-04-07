@@ -13,7 +13,7 @@
 ;; Modified: February 13, 2018
 ;; Version: 1.1.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25.1"))
 ;;
 ;;; Commentary:
 ;; This file provides systemd support for daemons.el.
@@ -21,14 +21,6 @@
 ;;; Code:
 (require 'seq)
 (require 'daemons)
-
-(defvar daemons-systemd--commands-alist
-  '((status . (lambda (name) (format "systemctl status %s" name)))
-    (start . (lambda (name) (format "systemctl start %s" name)))
-    (stop . (lambda (name) (format "systemctl stop %s" name)))
-    (restart . (lambda (name) (format "systemctl restart %s" name)))
-    (reload . (lambda (name) (format "systemctl reload %s" name))))
-  "Daemons commands alist for systemd.")
 
 (defun daemons-systemd--parse-list-item (raw-systemctl-output)
   "Parse a single line from RAW-SYSTEMCTL-OUTPUT into a tabulated list item."
@@ -49,14 +41,21 @@
     (seq-map 'daemons-systemd--parse-list-item)
     (seq-filter 'daemons-systemd--item-is-simple-service-p)))
 
-(defun daemons-systemd--list-headers ()
-  "Return the list of headers for a systemd ‘daemons-mode’ buffer."
-  [("Daemon (service)" 60 t)
-   ("Enabled" 40 t)])
+(daemons-define-submodule daemons-systemd
+  "Daemons submodule for systemd"
 
-(setq daemons--commands-alist daemons-systemd--commands-alist
-      daemons--list-fun 'daemons-systemd--list
-      daemons--list-headers-fun 'daemons-systemd--list-headers)
+  :test (and (eq system-type 'gnu/linux)
+             (equal 0 (daemons--shell-command "which systemd")))
+  :commands
+  '((status . (lambda (name) (format "systemctl status %s" name)))
+    (start . (lambda (name) (format "systemctl start %s" name)))
+    (stop . (lambda (name) (format "systemctl stop %s" name)))
+    (restart . (lambda (name) (format "systemctl restart %s" name)))
+    (reload . (lambda (name) (format "systemctl reload %s" name))))
+
+  :list (daemons-systemd--list)
+
+  :headers [("Daemon (service)" 60 t) ("Enabled" 40 t)])
 
 (provide 'daemons-systemd)
 ;;; daemons-systemd.el ends here

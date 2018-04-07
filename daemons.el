@@ -13,7 +13,7 @@
 ;; Modified: February 13, 2018
 ;; Version: 1.1.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25.1"))
 ;;
 ;;; Commentary:
 ;; A UI for managing init system daemons (services).
@@ -50,6 +50,18 @@ If this variable is nil then the init system will be guessed by `daemons-guess-i
   :type 'symbol
   :group 'daemons)
 
+(defcustom daemons-init-system-submodules '(daemons-systemd
+                                            daemons-sysvinit
+                                            daemons-brew
+                                            daemons-herd)
+  "List of available init system submodules for `daemons'.
+When running `daemons' each of these will be `required'd and the \"test\" form
+in each will be evaluated to determine if it is the right backend to use for
+the current buffer.
+
+If you implement your own init-system-submodule, add it to this list and make
+sure it is on your load path.")
+
 ;; declarations
 (defvar daemons--shell-command-fun 'shell-command
   "Contains a `shell-command' function.
@@ -61,6 +73,9 @@ Override this to your own value for mocking out shell calls in tests.")
 Override this to your own value for mocking out shell calls in tests.")
 
 ;; to be defined for each init system
+(defvar daemons--init-system-submodules-alist nil
+  "An alist of the available init system submodules.")
+
 (defvar daemons--commands-alist nil
   "Daemons commands alist.
 The car of each pair is the command symbol (e.g. 'stop).
@@ -278,6 +293,42 @@ state of the daemon."
       (daemons-mode)
       (daemons--refresh-list)
       (tabulated-list-print t t))))
+
+;; macros
+(defmacro daemons-define-submodule (name docstring &rest forms)
+  "Define a new daemons submodule called NAME, described by DOCSTRING.
+
+FORMS begins with a plist with these properties:
+
+:test - An expression to evaluate that will return true if this submodule is
+        appropriate for this system
+
+        This could be something like:
+        (and (eq system-type 'gnu/linux)
+             (eq 0 (daemons--shell-command \"which service\")))
+
+:commands - An alist of user commands (see `daemons--commands-alist')
+
+:list - An expression to get daemons list (see `daemons--list')
+
+:headers - An expression to get list headers (see `daemons--list-headers')
+
+The remainder of FORMS will be ignored."
+  (declare (indent defun))
+  (let ((submodule-props-plist (seq-take forms 8)))
+    (when (or (not (equal 8 (length submodule-props-plist)))
+              (not (plist-member submodule-props-plist :test))
+              (not (plist-member submodule-props-plist :commands))
+              (not (plist-member submodule-props-plist :list))
+              (not (plist-member submodule-props-plist :headers)))
+      (error "The submodule definition is not complete"))
+    `(map-put daemons--init-system-submodules-alist (quote ,name)
+              (list
+                :docstring ,docstring
+                :test (lambda () ,(plist-get submodule-props-plist :test))
+                :commands ,(plist-get submodule-props-plist :commands)
+                :list (lambda () ,(plist-get submodule-props-plist :list))
+                :headers (lambda () ,(plist-get submodule-props-plist :headers))))))
 
 ;; mode definitions
 (define-derived-mode daemons-mode tabulated-list-mode
