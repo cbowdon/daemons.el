@@ -29,6 +29,10 @@ test
   (let ((daemons--shell-command-fun
          (lambda (cmd &rest _) (if (equal cmd "which service") 0 1))))
     (should (equal 'daemons-sysvinit (daemons-guess-init-system-submodule))))
+  ;; Shepherd
+  (let ((daemons--shell-command-fun
+         (lambda (cmd &rest _) (if (equal cmd "which herd") 0 1))))
+    (should (equal 'daemons-shepherd (daemons-guess-init-system-submodule))))
   ;; systemd
   (let ((daemons--shell-command-fun
          (lambda (cmd &rest _) (if (equal cmd "which systemctl") 0 1))))
