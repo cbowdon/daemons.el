@@ -87,6 +87,15 @@ Override this to your own value for mocking out shell calls in tests.")
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
 
+(defun daemons--get-hostname (path)
+  "Get the hostname of the given PATH.
+
+If PATH is a TRAMP file name extract the hostname, otherwise get the local
+system's hostname."
+  (if (tramp-tramp-file-p path)
+      (tramp-file-name-real-host (tramp-dissect-file-name path))
+    (system-name)))
+
 (defun daemons--get-list-buffer-name (hostname)
   "Return the buffer name for daemons on HOSTNAME."
   (format "*daemons on %s*" hostname))
@@ -126,7 +135,7 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
 
 The output buffer is in `daemons-output-mode' and will be switched to if not active."
-  (let ((hostname "localhost"))
+  (let ((hostname (daemons--get-hostname default-directory)))
     (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name hostname))
       (setq buffer-read-only nil
             daemons--current-id daemon-name)
@@ -208,8 +217,9 @@ e.g. '((start . (lambda (x) (format \"service %s start\" x)))
 
 (defun daemons--refresh-list ()
   "Refresh the list of daemons."
-  (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))
-    (setq-local tabulated-list-entries (lambda () (daemons--list (daemons-init-system-submodule))))))
+  (let ((hostname (daemons--get-hostname default-directory)))
+    (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name hostname))
+      (setq-local tabulated-list-entries (lambda () (daemons--list (daemons-init-system-submodule)))))))
 
 ;; interactive functions
 (defun daemons-status-at-point (name)
@@ -280,7 +290,8 @@ This opens a ‘daemons-mode’ list buffer.  Move the cursor to a daemon line a
 execute one of the commands in `describe-mode' to show status and manage the
 state of the daemon."
   (interactive)
-  (let ((list-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))))
+  (let* ((hostname (daemons--get-hostname default-directory))
+         (list-buffer (get-buffer-create (daemons--get-list-buffer-name hostname))))
     (with-current-buffer list-buffer
       (display-buffer-pop-up-window list-buffer nil)
       (switch-to-buffer-other-window list-buffer)

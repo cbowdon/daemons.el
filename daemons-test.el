@@ -1,16 +1,6 @@
 (require 'ert)
 (load-file "./daemons.el")
 
-(ert-deftest split-lines-test ()
-  (should (equal '("this" "is" "a" "test") (daemons--split-lines "this
-is
-
-a
-
-
-test
-"))))
-
 (ert-deftest daemons-run-test ()
   (let* (;; mock the shell command function to just echo into buffer
          (daemons--shell-command-fun (lambda (cmd ins) (insert cmd)))
@@ -109,5 +99,24 @@ test
 ;; system-specific tests
 (dolist (test-suite (directory-files "." t "daemons-.*-test\.el$"))
   (load-file test-suite))
+
+;; helper function tests
+(ert-deftest daemons--split-lines-test ()
+  (should (equal '("this" "is" "a" "test") (daemons--split-lines "this
+is
+
+a
+
+
+test
+"))))
+
+(ert-deftest daemons--get-hostname-test-local ()
+  (should (equal (system-name)
+                 (daemons--get-hostname "/tmp/file"))))
+
+(ert-deftest daemons--get-hostname-test-remote ()
+  (should (equal "example.com"
+                 (daemons--get-hostname "/ssh:me@example.com:/etc/issue"))))
 
 (ert t)
