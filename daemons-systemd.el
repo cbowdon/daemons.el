@@ -22,6 +22,22 @@
 (require 'seq)
 (require 'daemons)
 
+(daemons-define-submodule daemons-systemd
+  "Daemons submodule for systemd."
+
+  :test (and (eq system-type 'gnu/linux)
+             (equal 0 (daemons--shell-command "which systemd")))
+  :commands
+  '((status . (lambda (name) (format "systemctl status %s" name)))
+    (start . (lambda (name) (format "systemctl start %s" name)))
+    (stop . (lambda (name) (format "systemctl stop %s" name)))
+    (restart . (lambda (name) (format "systemctl restart %s" name)))
+    (reload . (lambda (name) (format "systemctl reload %s" name))))
+
+  :list (daemons-systemd--list)
+
+  :headers [("Daemon (service)" 60 t) ("Enabled" 40 t)])
+
 (defun daemons-systemd--parse-list-item (raw-systemctl-output)
   "Parse a single line from RAW-SYSTEMCTL-OUTPUT into a tabulated list item."
   (let* ((parts (split-string raw-systemctl-output))
@@ -40,22 +56,6 @@
     (daemons--split-lines)
     (seq-map 'daemons-systemd--parse-list-item)
     (seq-filter 'daemons-systemd--item-is-simple-service-p)))
-
-(daemons-define-submodule daemons-systemd
-  "Daemons submodule for systemd."
-
-  :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which systemd")))
-  :commands
-  '((status . (lambda (name) (format "systemctl status %s" name)))
-    (start . (lambda (name) (format "systemctl start %s" name)))
-    (stop . (lambda (name) (format "systemctl stop %s" name)))
-    (restart . (lambda (name) (format "systemctl restart %s" name)))
-    (reload . (lambda (name) (format "systemctl reload %s" name))))
-
-  :list (daemons-systemd--list)
-
-  :headers [("Daemon (service)" 60 t) ("Enabled" 40 t)])
 
 (provide 'daemons-systemd)
 ;;; daemons-systemd.el ends here

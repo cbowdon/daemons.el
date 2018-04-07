@@ -20,6 +20,7 @@
 
 ;;; Code:
 (require 'seq)
+(require 'map)
 
 ;; customization
 (defgroup daemons nil

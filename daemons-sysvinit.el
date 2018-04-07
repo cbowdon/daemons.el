@@ -22,6 +22,22 @@
 (require 'seq)
 (require 'daemons)
 
+(daemons-define-submodule daemons-sysvinit
+  "Daemons submodule for SysVinit."
+
+  :test (and (eq system-type 'gnu/linux)
+             (equal 0 (daemons--shell-command "which service")))
+  :commands
+  '((status . (lambda (name) (format "service %s status" name)))
+    (start . (lambda (name) (format "service %s start" name)))
+    (stop . (lambda (name) (format "service %s stop" name)))
+    (restart . (lambda (name) (format "service %s restart" name)))
+    (reload . (lambda (name) (format "service %s reload" name))))
+
+  :list (daemons-sysvinit--list)
+
+  :headers (daemons-sysvinit--list-headers))
+
 (defun daemons-sysvinit--parse-list-item (raw-chkconfig-output)
   "Parse a single line from RAW-CHKCONFIG-OUTPUT into a tabulated list item."
   (let* ((parts (split-string raw-chkconfig-output nil t))
@@ -44,22 +60,6 @@
                 (lambda (x)
                   (list (number-to-string x) 5 t))
                 (number-sequence 0 6)))))
-
-(daemons-define-submodule daemons-sysvinit
-  "Daemons submodule for SysVinit."
-
-  :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which service")))
-  :commands
-  '((status . (lambda (name) (format "service %s status" name)))
-    (start . (lambda (name) (format "service %s start" name)))
-    (stop . (lambda (name) (format "service %s stop" name)))
-    (restart . (lambda (name) (format "service %s restart" name)))
-    (reload . (lambda (name) (format "service %s reload" name))))
-
-  :list (daemons-sysvinit--list)
-
-  :headers (daemons-sysvinit--list-headers))
 
 (provide 'daemons-sysvinit)
 ;;; daemons-sysvinit.el ends here

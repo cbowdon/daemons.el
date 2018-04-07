@@ -23,6 +23,22 @@
 (require 'seq)
 (require 'daemons)
 
+(daemons-define-submodule daemons-brew
+  "Daemons module for brew services."
+
+  :test (and (eq system-type 'darwin)
+             (equal 0 (daemons--shell-command "which brew")))
+
+  :commands
+  '((status . (lambda (name) (format "brew services list %s" name)))
+    (start . (lambda (name) (format "brew services start %s" name)))
+    (stop . (lambda (name) (format "brew services stop %s" name)))
+    (restart . (lambda (name) (format "brew services restart %s" name))))
+
+  :list (daemons-brew--list)
+
+  :headers (daemons-brew--list-headers))
+
 (defun daemons-brew--parse-list-item (output)
   "Parse a single line from OUTPUT into a tabulated list item."
   (let* ((parts (split-string output nil t))
@@ -47,22 +63,6 @@
                '("Status" 10 t)
                '("User" 10 t)
                '("Plist" 50 t))))
-
-(daemons-define-submodule daemons-brew
-  "Daemons module for brew services."
-
-  :test (and (eq system-type 'darwin)
-             (equal 0 (daemons--shell-command "which brew")))
-
-  :commands
-  '((status . (lambda (name) (format "brew services list %s" name)))
-    (start . (lambda (name) (format "brew services start %s" name)))
-    (stop . (lambda (name) (format "brew services stop %s" name)))
-    (restart . (lambda (name) (format "brew services restart %s" name))))
-
-  :list (daemons-brew--list)
-
-  :headers (daemons-brew--list-headers))
 
 (provide 'daemons-brew)
 ;;; daemons-brew.el ends here
