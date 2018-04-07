@@ -13,7 +13,7 @@
 ;; Modified: February 13, 2018
 ;; Version: 1.1.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25.1"))
 ;;
 ;;; Commentary:
 ;; This file provides SysVinit support for daemons.el.
@@ -21,14 +21,6 @@
 ;;; Code:
 (require 'seq)
 (require 'daemons)
-
-(defvar daemons-sysvinit--commands-alist
-  '((status . (lambda (name) (format "service %s status" name)))
-    (start . (lambda (name) (format "service %s start" name)))
-    (stop . (lambda (name) (format "service %s stop" name)))
-    (restart . (lambda (name) (format "service %s restart" name)))
-    (reload . (lambda (name) (format "service %s reload" name))))
-  "Daemons commands alist for SysVinit.")
 
 (defun daemons-sysvinit--parse-list-item (raw-chkconfig-output)
   "Parse a single line from RAW-CHKCONFIG-OUTPUT into a tabulated list item."
@@ -53,9 +45,21 @@
                   (list (number-to-string x) 5 t))
                 (number-sequence 0 6)))))
 
-(setq daemons--commands-alist daemons-sysvinit--commands-alist
-      daemons--list-fun 'daemons-sysvinit--list
-      daemons--list-headers-fun 'daemons-sysvinit--list-headers)
+(daemons-define-submodule daemons-sysvinit
+  "Daemons submodule for SysVinit"
+
+  :test (and (eq system-type 'gnu/linux)
+             (equal 0 (daemons--shell-command "which service")))
+  :commands
+  '((status . (lambda (name) (format "service %s status" name)))
+    (start . (lambda (name) (format "service %s start" name)))
+    (stop . (lambda (name) (format "service %s stop" name)))
+    (restart . (lambda (name) (format "service %s restart" name)))
+    (reload . (lambda (name) (format "service %s reload" name))))
+
+  :list (daemons-sysvinit--list)
+
+  :headers (daemons-sysvinit--list-headers))
 
 (provide 'daemons-sysvinit)
 ;;; daemons-sysvinit.el ends here

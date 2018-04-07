@@ -37,30 +37,19 @@ Security wise - off is safer of course, to avoid unnecessary privilege."
   :type 'boolean
   :group 'daemons)
 
-(defcustom daemons-init-system-submodule nil
-  "Lisp module that implements specific commands for an init system.
-e.g. 'daemons-systemd.
-Those specific commands are:
-
-- `daemons--commands-alist'
-- `daemons--list-fun'
-- `daemons--list-headers-fun'
-
-If this variable is nil then the init system will be guessed by `daemons-guess-init-system-submodule'."
-  :type 'symbol
-  :group 'daemons)
-
 (defcustom daemons-init-system-submodules '(daemons-systemd
                                             daemons-sysvinit
-                                            daemons-brew
-                                            daemons-herd)
+                                            daemons-brew)
   "List of available init system submodules for `daemons'.
 When running `daemons' each of these will be `required'd and the \"test\" form
 in each will be evaluated to determine if it is the right backend to use for
 the current buffer.
 
 If you implement your own init-system-submodule, add it to this list and make
-sure it is on your load path.")
+sure it is on your load path.
+
+See `daemons-define-submodule' for how to implement your own."
+  :type '(repeat symbol))
 
 ;; declarations
 (defvar daemons--shell-command-fun 'shell-command
@@ -72,31 +61,8 @@ Override this to your own value for mocking out shell calls in tests.")
   "Contains a `shell-command-to-string' function.
 Override this to your own value for mocking out shell calls in tests.")
 
-;; to be defined for each init system
 (defvar daemons--init-system-submodules-alist nil
   "An alist of the available init system submodules.")
-
-(defvar daemons--commands-alist nil
-  "Daemons commands alist.
-The car of each pair is the command symbol (e.g. 'stop).
-The cdr of each pair is a function taking a daemon name and returning a shell
-command to execute.
-
-e.g. '((start . (lambda (x) (format \"service %s start\" x)))
-       (stop . (lambda (x) (format \"service %s stop\" x))))")
-
-(defvar daemons--list-fun nil
-  "Function to list all daemons.
-It should take no arguments and return a list in the right format for
-`tabulated-list-entries'.
-It will therefore also need to match the columns defined with
-`daemons--list-headers-fun'.")
-
-(defvar daemons--list-headers-fun nil
-  "Function to get headers for list of all daemons.
-It should take no arguments and return a vector in the right format for
-`tabulated-list-format'.
-It will therefore also need to match the entries returned by `daemons--list-fun'.")
 
 (defvar daemons-mode-map
   (let ((map (make-sparse-keymap)))
@@ -126,23 +92,7 @@ It will therefore also need to match the entries returned by `daemons--list-fun'
 
 (defun daemons--get-output-buffer-name (hostname)
   "Return the buffer name for daemons output on HOSTNAME."
-  (format   "*daemons-output on %s*" hostname))
-
-(defun daemons--list ()
-  "Return the list of all daemons.
-
-The precise format of the results will depend on the specific subcommand.
-It will be different for different init systems, and will match
-`daemons--list-headers'."
-  (daemons--require-init-system-submodule)
-  (funcall daemons--list-fun))
-
-(defun daemons--list-headers ()
-  "Return the headers for the list of all daemons.
-
-The results will correspond to the format of each item in `daemons--list'."
-  (daemons--require-init-system-submodule)
-  (funcall daemons--list-headers-fun))
+  (format "*daemons-output on %s*" hostname))
 
 (defun daemons--shell-command (&rest args)
   "Dynamically bound alias for `shell-command' (to enable test mocks).
@@ -188,10 +138,22 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
 
 (defun daemons--run (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Insert the results into the current buffer."
-  (let ((command-fun (alist-get command daemons--commands-alist)))
+  (let ((command-fun (daemons--command command (daemons-init-system-submodule))))
     (when (not command-fun)
       (error "No such daemon command: %s" command))
     (daemons--shell-command (funcall command-fun daemon-name) t)))
+
+(defun daemons-init-system-submodule ()
+  "Test each installed submodule to find the appropriate one for this system."
+  (seq-do (lambda (submodule) (ignore-errors (require submodule)))
+          daemons-init-system-submodules)
+  (or
+   (seq-find 'daemons--test-submodule daemons-init-system-submodules)
+   (error "I'm sorry, your init system isn't supported yet!")))
+
+(defun daemons--require-init-system-submodule ()
+  "Require the appropriate submodule for the init system."
+  (require (daemons-init-system-submodule)))
 
 (defun daemons--get-submodule (name)
   "Get the submodule definition for NAME."
@@ -202,32 +164,41 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (let ((submodule (daemons--get-submodule name)))
     (funcall (plist-get submodule :test))))
 
-;; (defun daemons--list (submodule-name)
-;;   "Return the list of all daemons for SUBMODULE-NAME.
+(defun daemons--list (submodule-name)
+  "Return the list of all daemons for SUBMODULE-NAME.
 
-;; The precise format of the results will depend on the specific subcommand.
-;; It will be different for different init systems, and will match
-;; `daemons--list-headers'."
-;;   (let ((submodule (daemons--get-submodule submodule-name)))
-;;     (funcall (plist-get submodule :list))))
+It should return a list in the right format for `tabulated-list-entries'.
 
-;; (defun daemons--list-headers (submodule-name)
-;;   "Return the headers for the list of all daemons for SUBMODULE-NAME.
+The precise format of the results will depend on the specific subcommand.
+It will be different for different init systems, and must match
+`daemons--list-headers'."
+  (let ((submodule (daemons--get-submodule submodule-name)))
+    (funcall (plist-get submodule :list))))
 
-;; The results will correspond to the format of each item in `daemons--list'."
-;;   (let ((submodule (daemons--get-submodule submodule-name)))
-;;     (funcall (plist-get submodule :headers))))
+(defun daemons--list-headers (submodule-name)
+  "Return the headers for the list of all daemons for SUBMODULE-NAME.
 
-(defun daemons-guess-init-system-submodule ()
-  "Call \"which\" to identify an installed init system."
-  (or
-   (seq-find 'daemons--test-submodule daemons-init-system-submodules)
-   (error "I'm sorry, your init system isn't supported yet!")))
+It should return a vector in the right format for `tabulated-list-format'.
 
-(defun daemons--require-init-system-submodule ()
-  "Require the appropriate submodule for the init system."
-  (require (or daemons-init-system-submodule
-               (daemons-guess-init-system-submodule))))
+The results will correspond to the format of each item in `daemons--list'."
+  (let ((submodule (daemons--get-submodule submodule-name)))
+    (funcall (plist-get submodule :headers))))
+
+(defun daemons--commands-alist (submodule-name)
+  "Get the daemons commands alist for SUBMODULE-NAME.
+
+The car of each pair is the command symbol (e.g. 'stop).
+The cdr of each pair is a function taking a daemon name and returning a shell
+command to execute.
+
+e.g. '((start . (lambda (x) (format \"service %s start\" x)))
+       (stop . (lambda (x) (format \"service %s stop\" x))))"
+  (let  ((submodule (daemons--get-submodule submodule-name)))
+    (plist-get submodule :commands)))
+
+(defun daemons--command (command submodule-name)
+  "Get the daemons COMMAND for SUBMODULE-NAME."
+  (alist-get command (daemons--commands-alist submodule-name)))
 
 (defun daemons--sudo ()
   "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
@@ -237,7 +208,7 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
 (defun daemons--refresh-list ()
   "Refresh the list of daemons."
   (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name "localhost"))
-    (setq-local tabulated-list-entries 'daemons--list)))
+    (setq-local tabulated-list-entries (lambda () (daemons--list (daemons-init-system-submodule))))))
 
 ;; interactive functions
 (defun daemons-status-at-point (name)
@@ -268,7 +239,7 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
 (defun daemons--completing-read ()
   "Call `completing-read' with the current daemons list."
   ;; TODO some caching
-  (completing-read "Daemon name: " (daemons--list)))
+  (completing-read "Daemon name: " (daemons--list (daemons-init-system-submodule))))
 
 ;;;###autoload
 (defun daemons-status (name)
@@ -359,18 +330,10 @@ The remainder of FORMS will be ignored."
   "Daemons"
   "UI for viewing and controlling system daemons"
   :group 'daemons
-  (setq tabulated-list-format (daemons--list-headers)
+  (setq tabulated-list-format (daemons--list-headers (daemons-init-system-submodule))
         tabulated-list-padding 2)
   (add-hook 'tabulated-list-revert-hook 'daemons--refresh-list)
   (tabulated-list-init-header))
-
-;; ;; To demo SysVinit support with mocked-out shell commands:
-;; (setq daemons-init-system-submodule 'daemons-sysvinit)
-;; (setq daemons--shell-command-to-string-fun (lambda (_) "
-;; NetworkManager  0:off   1:off   2:on    3:on    4:on    5:on    6:off
-;; abrt-ccpp       0:off   1:off   2:off   3:on    4:off   5:on    6:off
-;; abrt-oops       0:off   1:off   2:off   3:on    4:off   5:on    6:off"))
-;; (setq daemons--shell-command-fun (lambda (&rest _) (insert "daemon is fucking ded")))
 
 (define-derived-mode daemons-output-mode special-mode
   "Daemons Output"
