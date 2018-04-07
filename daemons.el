@@ -183,6 +183,7 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
   (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
         ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
         ((= 0 (daemons--shell-command "which brew")) 'daemons-brew)
+        ((= 0 (daemons--shell-command "which herd")) 'daemons-herd)
         (t (error "I'm sorry, your init system isn't supported yet!"))))
 
 (defun daemons--require-init-system-submodule ()
