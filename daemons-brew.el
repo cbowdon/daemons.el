@@ -24,7 +24,7 @@
 (require 'daemons)
 
 (daemons-define-submodule daemons-brew
-  "Daemons module for brew services."
+  "Daemons submodule for brew services."
 
   :test (and (eq system-type 'darwin)
              (equal 0 (daemons--shell-command "which brew")))

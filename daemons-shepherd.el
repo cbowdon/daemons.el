@@ -23,7 +23,7 @@
 (require 'daemons)
 
 (daemons-define-submodule daemons-shepherd
-  "Daemons module for GNU Shepherd."
+  "Daemons submodule for GNU Shepherd."
 
   :test (and (eq system-type 'gnu/linux)
              (equal 0 (daemons--shell-command "which herd")))

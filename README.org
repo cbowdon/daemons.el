@@ -8,7 +8,7 @@ N.B. This package was briefly known as =services-mode=.
 
 There is support for the following init systems and service managers:
 
-- systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch)
+- systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch, etc.)
 - SysVinit (RHEL6)
 - [[https://github.com/Homebrew/homebrew-services][brew services (macOS)]]
 - GNU Shepherd for user services (GuixSD)
@@ -56,36 +56,41 @@ If for some reason you are unable or prefer not to use MELPA, you can also do th
 
 ** Configuration
 
-Please see =M-x customize-mode=. If you are having trouble with permissions for SysV then setting the =daemons-always-sudo= custom variable may be what you need.
+Please see =M-x customize-mode=.
+
+If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need. Alternatively you could use the TRAMP support to =sudo= into your local system.
 
 ** Extending
 
 To extend =daemons= to support another init system, there are two steps:
 
-1. Add your submodule name (e.g. =daemons-example=) to the =daemons-init-system-submodules= custom variable.
-2. Write a package that defines the submodule using the =daemons-define-submodule= macro:
+1. Add your extension name (e.g. =daemons-example=) to the =daemons-init-system-submodules= custom variable.
+2. Write a package that defines the extension using the =daemons-define-submodule= macro:
 
 #+BEGIN_EXAMPLE emacs-lisp
   (daemons-define-submodule daemons-example
-    "Daemons module for example services."
+    "Daemons submodule for Example system, where 'ex-sys' is the daemons manager (like 'systemd' or 'services')."
 
-    ;; An expression to evaluate that will return true
-    ;; if this submodule is appropriate for this system
-    :test (and (eq system-type 'gnu/linux)
-               (equal 0 (daemons--shell-command "which example")))
+    ;; This is an expression to evaluate that will return true if this submodule works on this system:
+    :test
+    (and (eq system-type 'gnu/linux)
+         (equal 0 (daemons--shell-command "which ex-sys")))
 
-    ;; An alist of user commands (see `daemons--commands-alist')
+    ;; This is a map of user commands (see `daemons--commands-alist'):
     :commands
-    '((status . (lambda (name) (format "example list %s" name)))
-      (start . (lambda (name) (format "example start %s" name)))
-      (stop . (lambda (name) (format "example stop %s" name)))
-      (restart . (lambda (name) (format "example restart %s" name))))
+    '((status . (lambda (name) (format "ex-sys status %s" name)))
+      (start . (lambda (name) (format "ex-sys start %s" name)))
+      (stop . (lambda (name) (format "ex-sys stop %s" name)))
+      (reload . (lambda (name) (format "ex-sys reload %s" name)))
+      (restart . (lambda (name) (format "ex-sys restart %s" name))))
 
-    ;; An expression to get the daemons list (see `daemons--list')
-    :list (daemons-example--list)
+    ;; This is expression to get the daemons list (see `daemons--list'):
+    :list
+    (daemons-example--list)
 
-    ;; An expression to get the list headers (see `daemons--list-headers')
-    :headers (daemons-example--list-headers))
+    ;; This is an expression to get the list headers (see `daemons--list-headers'):
+    :headers
+    (daemons-example--list-headers))
 #+END_EXAMPLE
 
-Have a look at any of the existing submodules for inspiration. [[./daemons-shepherd.el][The submodule for GNU Shepherd]] is a short and sweet example.
+Have a look at any of the existing submodules for inspiration. [[./daemons-shepherd.el][The submodule for GNU Shepherd]] is a short and sweet example - there's a definition at the top, a couple of helper functions for parsing command output and that's it.
