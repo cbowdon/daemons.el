@@ -111,12 +111,12 @@ a
 test
 "))))
 
-(ert-deftest daemons--get-hostname-test-local ()
-  (should (equal (system-name)
-                 (daemons--get-hostname "/tmp/file"))))
+(ert-deftest daemons--get-user-and-hostname-test-local ()
+  (should (equal (format "%s@%s" (user-login-name) (system-name))
+                 (daemons--get-user-and-hostname "/tmp/file"))))
 
-(ert-deftest daemons--get-hostname-test-remote ()
-  (should (equal "example.com"
-                 (daemons--get-hostname "/ssh:me@example.com:/etc/issue"))))
+(ert-deftest daemons--get-user-and-hostname-test-remote ()
+  (should (equal "me@example.com"
+                 (daemons--get-user-and-hostname "/ssh:me@example.com:/etc/issue"))))
 
 (ert t)

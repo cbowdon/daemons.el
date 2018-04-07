@@ -87,22 +87,24 @@ Override this to your own value for mocking out shell calls in tests.")
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
 
-(defun daemons--get-hostname (path)
-  "Get the hostname of the given PATH.
-
-If PATH is a TRAMP file name extract the hostname, otherwise get the local
-system's hostname."
+(defun daemons--get-user-and-hostname (path)
+  "Get the user and hostname of the given PATH, in format \"user@hostname\"."
   (if (tramp-tramp-file-p path)
-      (tramp-file-name-real-host (tramp-dissect-file-name path))
-    (system-name)))
+      (let ((dissected-path (tramp-dissect-file-name path)))
+        (format "%s@%s"
+                (tramp-file-name-real-user dissected-path)
+                (tramp-file-name-real-host dissected-path)))
+    (format "%s@%s"
+            (user-login-name)
+            (system-name))))
 
 (defun daemons--get-list-buffer-name (hostname)
   "Return the buffer name for daemons on HOSTNAME."
-  (format "*daemons on %s*" hostname))
+  (format "*daemons for %s*" hostname))
 
 (defun daemons--get-output-buffer-name (hostname)
   "Return the buffer name for daemons output on HOSTNAME."
-  (format "*daemons-output on %s*" hostname))
+  (format "*daemons-output for %s*" hostname))
 
 (defun daemons--shell-command (&rest args)
   "Dynamically bound alias for `shell-command' (to enable test mocks).
@@ -135,7 +137,7 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
 
 The output buffer is in `daemons-output-mode' and will be switched to if not active."
-  (let ((hostname (daemons--get-hostname default-directory)))
+  (let ((hostname (daemons--get-user-and-hostname default-directory)))
     (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name hostname))
       (setq buffer-read-only nil
             daemons--current-id daemon-name)
@@ -217,7 +219,7 @@ e.g. '((start . (lambda (x) (format \"service %s start\" x)))
 
 (defun daemons--refresh-list ()
   "Refresh the list of daemons."
-  (let ((hostname (daemons--get-hostname default-directory)))
+  (let ((hostname (daemons--get-user-and-hostname default-directory)))
     (with-current-buffer (get-buffer-create (daemons--get-list-buffer-name hostname))
       (setq-local tabulated-list-entries (lambda () (daemons--list (daemons-init-system-submodule)))))))
 
@@ -290,7 +292,7 @@ This opens a ‘daemons-mode’ list buffer.  Move the cursor to a daemon line a
 execute one of the commands in `describe-mode' to show status and manage the
 state of the daemon."
   (interactive)
-  (let* ((hostname (daemons--get-hostname default-directory))
+  (let* ((hostname (daemons--get-user-and-hostname default-directory))
          (list-buffer (get-buffer-create (daemons--get-list-buffer-name hostname))))
     (with-current-buffer list-buffer
       (display-buffer-pop-up-window list-buffer nil)
