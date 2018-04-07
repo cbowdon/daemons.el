@@ -24,16 +24,6 @@ test
                      (daemons--run 'status "foo")
                      (buffer-string))))))
 
-(ert-deftest guess-init-system-submodule-test ()
-  ;; SysVinit
-  (let ((daemons--shell-command-fun
-         (lambda (cmd &rest _) (if (equal cmd "which service") 0 1))))
-    (should (equal 'daemons-sysvinit (daemons-guess-init-system-submodule))))
-  ;; systemd
-  (let ((daemons--shell-command-fun
-         (lambda (cmd &rest _) (if (equal cmd "which systemctl") 0 1))))
-    (should (equal 'daemons-systemd (daemons-guess-init-system-submodule)))))
-
 (ert-deftest daemons-define-submodule-test ()
   "A correct definition should populate `daemons--init-system-submodules-alist'."
   (let ((expected (list :docstring "Test: happy path submodule"
@@ -50,6 +40,22 @@ test
     (should (equal expected
                    (alist-get 'daemons-happy
                               daemons--init-system-submodules-alist)))))
+
+(ert-deftest daemons--test-submodule-test ()
+    (daemons-define-submodule daemons-positive-test
+      "Test: positive test submodule"
+      :test t
+      :commands nil
+      :headers []
+      :list nil)
+    (daemons-define-submodule daemons-negative-test
+      "Test: negative test submodule"
+      :test nil
+      :commands nil
+      :headers []
+      :list nil)
+  (should (daemons--test-submodule 'daemons-positive-test))
+  (should (not (daemons--test-submodule 'daemons-negative-test))))
 
 ;; system-specific tests
 (dolist (test-suite (directory-files "." t "daemons-.*-test\.el$"))

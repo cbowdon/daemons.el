@@ -193,17 +193,41 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
       (error "No such daemon command: %s" command))
     (daemons--shell-command (funcall command-fun daemon-name) t)))
 
+(defun daemons--get-submodule (name)
+  "Get the submodule definition for NAME."
+  (alist-get name daemons--init-system-submodules-alist))
+
+(defun daemons--test-submodule (name)
+  "Execute the submodule test for NAME."
+  (let ((submodule (daemons--get-submodule name)))
+    (funcall (plist-get submodule :test))))
+
+;; (defun daemons--list (submodule-name)
+;;   "Return the list of all daemons for SUBMODULE-NAME.
+
+;; The precise format of the results will depend on the specific subcommand.
+;; It will be different for different init systems, and will match
+;; `daemons--list-headers'."
+;;   (let ((submodule (daemons--get-submodule submodule-name)))
+;;     (funcall (plist-get submodule :list))))
+
+;; (defun daemons--list-headers (submodule-name)
+;;   "Return the headers for the list of all daemons for SUBMODULE-NAME.
+
+;; The results will correspond to the format of each item in `daemons--list'."
+;;   (let ((submodule (daemons--get-submodule submodule-name)))
+;;     (funcall (plist-get submodule :headers))))
+
 (defun daemons-guess-init-system-submodule ()
   "Call \"which\" to identify an installed init system."
-  (cond ((= 0 (daemons--shell-command "which systemctl")) 'daemons-systemd)
-        ((= 0 (daemons--shell-command "which service")) 'daemons-sysvinit)
-        ((= 0 (daemons--shell-command "which brew")) 'daemons-brew)
-        (t (error "I'm sorry, your init system isn't supported yet!"))))
+  (or
+   (seq-find 'daemons--test-submodule daemons-init-system-submodules)
+   (error "I'm sorry, your init system isn't supported yet!")))
 
 (defun daemons--require-init-system-submodule ()
   "Require the appropriate submodule for the init system."
   (require (or daemons-init-system-submodule
-                   (daemons-guess-init-system-submodule))))
+               (daemons-guess-init-system-submodule))))
 
 (defun daemons--sudo ()
   "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
@@ -324,11 +348,11 @@ The remainder of FORMS will be ignored."
       (error "The submodule definition is not complete"))
     `(map-put daemons--init-system-submodules-alist (quote ,name)
               (list
-                :docstring ,docstring
-                :test (lambda () ,(plist-get submodule-props-plist :test))
-                :commands ,(plist-get submodule-props-plist :commands)
-                :list (lambda () ,(plist-get submodule-props-plist :list))
-                :headers (lambda () ,(plist-get submodule-props-plist :headers))))))
+               :docstring ,docstring
+               :test (lambda () ,(plist-get submodule-props-plist :test))
+               :commands ,(plist-get submodule-props-plist :commands)
+               :list (lambda () ,(plist-get submodule-props-plist :list))
+               :headers (lambda () ,(plist-get submodule-props-plist :headers))))))
 
 ;; mode definitions
 (define-derived-mode daemons-mode tabulated-list-mode
