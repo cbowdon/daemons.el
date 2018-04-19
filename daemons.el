@@ -102,8 +102,8 @@ Override this to your own value for mocking out shell calls in tests.")
   (if (tramp-tramp-file-p path)
       (let ((dissected-path (tramp-dissect-file-name path)))
         (format "%s@%s"
-                (tramp-file-name-real-user dissected-path)
-                (tramp-file-name-real-host dissected-path)))
+                (tramp-file-name-user dissected-path)
+                (tramp-file-name-host dissected-path)))
     (format "%s@%s"
             (user-login-name)
             (system-name))))
