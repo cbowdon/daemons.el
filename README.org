@@ -11,9 +11,11 @@ There is support for the following init systems and service managers:
 - systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch, etc.)
 - SysVinit (RHEL6)
 - [[https://github.com/Homebrew/homebrew-services][brew services (macOS)]]
-- GNU Shepherd for user services (GuixSD)
+- GNU Shepherd (GuixSD)
 
 It's designed to be easily extensible (see below) so if your system isn't supported please consider contributing.
+
+Managing daemons on local and remote systems is supported.
 
 ** Usage
 
@@ -58,7 +60,7 @@ If for some reason you are unable or prefer not to use MELPA, you can also do th
 
 Please see =M-x customize-mode=.
 
-If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need. Alternatively you could use the TRAMP support to =sudo= into your local system.
+If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need. For remote systems you can use the TRAMP support to sudo up, e.g. visit =/ssh:me@remotehost|sudo:remotehost:= then run =M-x daemons=.
 
 ** Extending
 
