@@ -37,7 +37,10 @@
   :group 'daemons)
 
 (defcustom daemons-always-sudo nil
-  "Whether to always attempt to sudo up in ‘daemons-mode’.
+  "Whether to always attempt to sudo up when using ‘daemons-mode’ locally.
+
+Note that this has no effect on remote systems.
+
 This defaults to off because in some systems at least you can query status
 without special privileges and will be prompted for a root password if you try
 anything else.  But at other times it's much more convenient to just assume sudo
@@ -226,9 +229,17 @@ e.g. '((start . (lambda (x) (format \"service %s start\" x)))
   (alist-get command (daemons--commands-alist submodule-name)))
 
 (defun daemons--sudo ()
-  "Become root using TRAMP, but hang out in a temporary directory to minimise damage potential."
-  (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
-    (cd (format "/sudo::%s" tempdir))))
+  "Become root using TRAMP (if on local system).
+
+Switches to a temporary directory to minimise damage potential.
+
+Note that this only works on the local system, not remote systems.  For a remote
+system you need to specify your own TRAMP path with a privileged user.
+
+e.g. /ssh:me@example.com|sudo:example.com:"
+  (unless (tramp-tramp-file-p default-directory)
+    (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
+      (cd (format "/sudo::%s" tempdir)))))
 
 (defun daemons--refresh-list ()
   "Refresh the list of daemons."
