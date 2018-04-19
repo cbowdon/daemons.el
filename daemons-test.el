@@ -115,8 +115,29 @@ test
   (should (equal (format "%s@%s" (user-login-name) (system-name))
                  (daemons--get-user-and-hostname "/tmp/file"))))
 
+(ert-deftest daemons--get-user-and-hostname-test-sudo ()
+  "Case where user is using tramp to access local system as root."
+  (should (equal (format "root@%s" (system-name))
+                 (daemons--get-user-and-hostname "/sudo::"))))
+
 (ert-deftest daemons--get-user-and-hostname-test-remote ()
+  "Case where user is using tramp to access a remote system."
   (should (equal "me@example.com"
                  (daemons--get-user-and-hostname "/ssh:me@example.com:/etc/issue"))))
+
+(ert-deftest daemons--get-user-and-hostname-test-remote-no-user ()
+  "Case where user can omit username because it's in their ssh config is same as current."
+  (should (equal "example.com"
+                 (daemons--get-user-and-hostname "/ssh:example.com:/etc/issue"))))
+
+(ert-deftest daemons--get-user-and-hostname-test-remote-no-host ()
+  "Case where user is ssh-ing into own system as different user."
+  (should (equal (format "me@%s" (system-name))
+                 (daemons--get-user-and-hostname "/ssh:me@:/etc/issue"))))
+
+(ert-deftest daemons--get-user-and-hostname-test-remote-no-user-or-host ()
+  "Case where user is ssh-ing into own system."
+  (should (equal (system-name)
+                 (daemons--get-user-and-hostname "/ssh::/etc/issue"))))
 
 (ert t)

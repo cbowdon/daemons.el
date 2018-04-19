@@ -100,10 +100,13 @@ Override this to your own value for mocking out shell calls in tests.")
 (defun daemons--get-user-and-hostname (path)
   "Get the user and hostname of the given PATH, in format \"user@hostname\"."
   (if (tramp-tramp-file-p path)
-      (let ((dissected-path (tramp-dissect-file-name path)))
-        (format "%s@%s"
-                (tramp-file-name-user dissected-path)
-                (tramp-file-name-host dissected-path)))
+      (let* ((dissected-path (tramp-dissect-file-name path))
+             (user (tramp-file-name-user dissected-path))
+             (host (tramp-file-name-host dissected-path)))
+        (cond ((and user host) (format "%s@%s" user host))
+              ((and (not user) host) host)
+              ((and user (not host) user))
+              (t path)))
     (format "%s@%s"
             (user-login-name)
             (system-name))))
