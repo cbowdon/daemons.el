@@ -26,7 +26,7 @@
   "Daemons submodule for systemd."
 
   :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which systemd")))
+             (equal 0 (daemons--shell-command "which systemctl")))
   :commands
   '((status . (lambda (name) (format "systemctl status %s" name)))
     (start . (lambda (name) (format "systemctl start %s" name)))
