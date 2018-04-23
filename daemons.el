@@ -100,9 +100,14 @@ Override this to your own value for mocking out shell calls in tests.")
   "Split STRING Into list of lines."
   (split-string string "[\n\r]+" t))
 
+(defun daemons--using-tramp-path-p (path)
+  "Return non-nil if tramp is loaded and PATH is a tramp path."
+  (and (functionp 'tramp-tramp-file-p)
+       (tramp-tramp-file-p path)))
+
 (defun daemons--get-user-and-hostname (path)
   "Get the user and hostname of the given PATH, in format \"user@hostname\"."
-  (if (tramp-tramp-file-p path)
+  (if (daemons--use-tramp-path-p path)
       (let* ((dissected-path (tramp-dissect-file-name path))
              (user (tramp-file-name-user dissected-path))
              (host (tramp-file-name-host dissected-path)))
@@ -237,7 +242,7 @@ Note that this only works on the local system, not remote systems.  For a remote
 system you need to specify your own TRAMP path with a privileged user.
 
 e.g. /ssh:me@example.com|sudo:example.com:"
-  (unless (tramp-tramp-file-p default-directory)
+  (unless (daemons--using-tramp-path-p default-directory)
     (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
       (cd (format "/sudo::%s" tempdir)))))
 
