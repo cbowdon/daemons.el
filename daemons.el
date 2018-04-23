@@ -184,10 +184,6 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
    (seq-find 'daemons--test-submodule daemons-init-system-submodules)
    (error "I'm sorry, your init system isn't supported yet!")))
 
-(defun daemons--require-init-system-submodule ()
-  "Require the appropriate submodule for the init system."
-  (require (daemons-init-system-submodule)))
-
 (defun daemons--get-submodule (name)
   "Get the submodule definition for NAME."
   (alist-get name daemons--init-system-submodules-alist))
@@ -327,7 +323,6 @@ state of the daemon."
       (display-buffer-pop-up-window list-buffer nil)
       (switch-to-buffer-other-window list-buffer)
       (when daemons-always-sudo (daemons--sudo))
-      (daemons--require-init-system-submodule)
       (daemons-mode)
       (daemons--refresh-list)
       (tabulated-list-print t t))))
