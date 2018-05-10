@@ -141,3 +141,7 @@ test
                  (daemons--get-user-and-hostname "/ssh::/etc/issue"))))
 
 (ert t)
+
+;; Test teardown - we added a dummy submodule
+(setq daemons-init-system-submodules
+      (remove 'daemons-run-test daemons-init-system-submodules))
