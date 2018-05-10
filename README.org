@@ -8,16 +8,18 @@ N.B. This package was briefly known as =services-mode=.
 
 There is support for the following init systems and service managers:
 
-- systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch)
+- systemd (RHEL7, Fedora, openSUSE, Debian, Ubuntu, Arch, etc.)
 - SysVinit (RHEL6)
 - [[https://github.com/Homebrew/homebrew-services][brew services (macOS)]]
-- GNU Shepherd for user services (GuixSD)
+- GNU Shepherd (GuixSD)
 
 It's designed to be easily extensible (see below) so if your system isn't supported please consider contributing.
 
+Managing daemons on local and remote systems is supported.
+
 ** Usage
 
-You can open the daemons list with =M-x daemons=.
+You can open the daemons list with =M-x daemons=. If started from a TRAMP buffer then the daemons for that remote system will be listed and manageable, otherwise it will be all the daemons on your local system.
 
 Navigate the list with =n= and =p=. Refresh the list with =g= (it's just a =tabulated-list-mode= buffer).
 
@@ -56,14 +58,41 @@ If for some reason you are unable or prefer not to use MELPA, you can also do th
 
 ** Configuration
 
-Please see =M-x customize-mode=. If you are having trouble with permissions for SysV then setting the =daemons-always-sudo= custom variable may be what you need.
+Please see =M-x customize-mode=.
+
+If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need. For remote systems you can use the TRAMP support to sudo up, e.g. visit =/ssh:me@remotehost|sudo:remotehost:= then run =M-x daemons=.
 
 ** Extending
 
-If you write a package that assigns
+To extend =daemons= to support another init system, there are two steps:
 
-- =daemons--commands-alist=
-- =daemons--list-fun=
-- =daemons--list-headers-fun=
+1. Add your extension name (e.g. =daemons-example=) to the =daemons-init-system-submodules= custom variable.
+2. Write a package that defines the extension using the =daemons-define-submodule= macro:
 
-to your own implementations and set custom variable =daemons-init-system-submodule= to that package then =M-x daemons= should just work for your system. You'll need to restart Emacs or manually load your package on first use.
+#+BEGIN_EXAMPLE emacs-lisp
+  (daemons-define-submodule daemons-example
+    "Daemons submodule for Example system, where 'ex-sys' is the daemons manager (like 'systemctl' or 'service')."
+
+    ;; This is an expression to evaluate that will return true if this submodule works on this system:
+    :test
+    (and (eq system-type 'gnu/linux)
+         (equal 0 (daemons--shell-command "which ex-sys")))
+
+    ;; This is a map of user commands (see `daemons--commands-alist'):
+    :commands
+    '((status . (lambda (name) (format "ex-sys status %s" name)))
+      (start . (lambda (name) (format "ex-sys start %s" name)))
+      (stop . (lambda (name) (format "ex-sys stop %s" name)))
+      (reload . (lambda (name) (format "ex-sys reload %s" name)))
+      (restart . (lambda (name) (format "ex-sys restart %s" name))))
+
+    ;; This is expression to get the daemons list (see `daemons--list'):
+    :list
+    (daemons-example--list)
+
+    ;; This is an expression to get the list headers (see `daemons--list-headers'):
+    :headers
+    (daemons-example--list-headers))
+#+END_EXAMPLE
+
+Have a look at any of the existing submodules for inspiration. [[./daemons-shepherd.el][The submodule for GNU Shepherd]] is a short and sweet example - there's a definition at the top, a couple of helper functions for parsing command output and that's it.

@@ -13,7 +13,7 @@
 ;; Modified: March 07, 2018
 ;; Version: 1.2.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25.1"))
 ;;
 ;;; Commentary:
 ;; This file provides GNU Shepherd support for daemons.el.
@@ -22,12 +22,20 @@
 (require 'seq)
 (require 'daemons)
 
-(defvar daemons-shepherd--commands-alist
+(daemons-define-submodule daemons-shepherd
+  "Daemons submodule for GNU Shepherd."
+
+  :test (and (eq system-type 'gnu/linux)
+             (equal 0 (daemons--shell-command "which herd")))
+  :commands
   '((status . (lambda (name) (format "herd status %s" name)))
     (start . (lambda (name) (format "herd start %s" name)))
     (stop . (lambda (name) (format "herd stop %s" name)))
     (restart . (lambda (name) (format "herd restart %s" name))))
-  "Daemons commands alist for the GNU Shepherd.")
+
+  :list (daemons-shepherd--list)
+
+  :headers [("Daemon (service)" 60 t) ("Active" 40 t)])
 
 (defun daemons-shepherd--parse-list-item (raw-shepherd-output)
   "Parse a single line from RAW-SHEPHERD-OUTPUT into a tabulated list item."
@@ -51,15 +59,6 @@
     (daemons--split-lines)
     (seq-filter 'daemons-shepherd--item-is-service-p)
     (seq-map 'daemons-shepherd--parse-list-item)))
-
-(defun daemons-shepherd--list-headers ()
-  "Return the list of headers for a shepherd ‘daemons-mode’ buffer."
-  [("Daemon (service)" 60 t)
-   ("Active" 40 t)])
-
-(setq daemons--commands-alist daemons-shepherd--commands-alist
-      daemons--list-fun 'daemons-shepherd--list
-      daemons--list-headers-fun 'daemons-shepherd--list-headers)
 
 (provide 'daemons-shepherd)
 ;;; daemons-shepherd.el ends here
