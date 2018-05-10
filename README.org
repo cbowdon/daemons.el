@@ -21,7 +21,7 @@ Managing daemons on local and remote systems is supported.
 
 You can open the daemons list with =M-x daemons=. If started from a TRAMP buffer then the daemons for that remote system will be listed and manageable, otherwise it will be all the daemons on your local system.
 
-Navigate the list with =n= and =p=. Refresh the list with =g= (it's just a =tabulated-list-mode= buffer).
+Navigate the list with =n= and =p=. Refresh the list with =g= (it's just a =tabulated-list-mode= buffer). You can sort the buffer with =tabulated-list-sort= or by clicking a header.
 
 The following commands are available for each daemon:
 
@@ -60,7 +60,23 @@ If for some reason you are unable or prefer not to use MELPA, you can also do th
 
 Please see =M-x customize-mode=.
 
-If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need. For remote systems you can use the TRAMP support to sudo up, e.g. visit =/ssh:me@remotehost|sudo:remotehost:= then run =M-x daemons=.
+** Troubleshooting
+
+*** Sudo permissions
+
+If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need.
+
+Alternatively you can navigate to a TRAMP path as a sudoer such as by doing =M-x cd /sudo::= and then call =M-x daemons=. This method also works for remote systems e.g. visit =/ssh:me@remotehost|sudo:remotehost:= then run =M-x daemons=. The buffer name will show what user and host you are on.
+
+Please +drink+ use sudo responsibly.
+
+*** Password caching
+
+Have a look at =M-x customize-group password= for this. You could also use the sudo tricks above.
+
+*** Emacs version support
+
+This package requires Emacs 25.1 or higher. Users are successfully using it with Emacs 26 and 27, but things may yet get broken by ongoing development. If you spot such a thing please raise an issue.
 
 ** Extending
 
