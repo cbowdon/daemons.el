@@ -31,6 +31,10 @@
 (require 'seq)
 (require 'map)
 
+;; Fix for Emacs 27 byte compilation errors relating to thread-last. See:
+;; https://github.com/cbowdon/daemons.el/issues/10#issuecomment-392261477
+(eval-when-compile (require 'subr-x))
+
 ;; customization
 (defgroup daemons nil
   "Customization group for Daemons mode"
