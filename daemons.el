@@ -10,8 +10,8 @@
 ;;; License: GPLv3
 ;;
 ;; Created: February 13, 2018
-;; Modified: February 13, 2018
-;; Version: 2.0.0
+;; Modified: December 15, 2018
+;; Version: 2.1.0
 ;; Keywords: unix convenience
 ;; Package-Requires: ((emacs "25.1"))
 ;;
@@ -89,6 +89,8 @@ Override this to your own value for mocking out shell calls in tests.")
     (define-key map (kbd "S") 'daemons-stop-at-point)
     (define-key map (kbd "R") 'daemons-restart-at-point)
     (define-key map (kbd "r") 'daemons-reload-at-point)
+    (define-key map (kbd "e") 'daemons-enable-at-point)
+    (define-key map (kbd "d") 'daemons-disable-at-point)
     map)
   "Keymap for daemons mode.")
 
@@ -278,6 +280,16 @@ e.g. /ssh:me@example.com|sudo:example.com:"
   (interactive (list (daemons--daemon-at-point)))
   (daemons--run-with-output-buffer 'reload name))
 
+(defun daemons-enable-at-point (name)
+  "Enable the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run-with-output-buffer 'enable name))
+
+(defun daemons-disable-at-point (name)
+  "Disable the daemon NAME at point in the daemons buffer."
+  (interactive (list (daemons--daemon-at-point)))
+  (daemons--run-with-output-buffer 'disable name))
+
 (defun daemons--completing-read ()
   "Call `completing-read' with the current daemons list."
   ;; TODO some caching
@@ -312,6 +324,18 @@ e.g. /ssh:me@example.com|sudo:example.com:"
   "Reload the daemon NAME.  Show results in an output buffer."
   (interactive (list (daemons--completing-read)))
   (daemons--run-with-output-buffer 'reload name))
+
+;;;###autoload
+(defun daemons-enable (name)
+  "Enable the daemon NAME.  Show results in an output buffer."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'enable name))
+
+;;;###autoload
+(defun daemons-disable (name)
+  "Disable the daemon NAME.  Show results in an output buffer."
+  (interactive (list (daemons--completing-read)))
+  (daemons--run-with-output-buffer 'disable name))
 
 ;;;###autoload
 (defun daemons ()

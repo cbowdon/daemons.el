@@ -10,8 +10,8 @@
 ;;; License: GPLv3
 ;;
 ;; Created: February 13, 2018
-;; Modified: February 13, 2018
-;; Version: 2.0.0
+;; Modified: December 15, 2018
+;; Version: 2.1.0
 ;; Keywords: unix convenience
 ;; Package-Requires: ((emacs "25.1"))
 ;;
@@ -32,7 +32,9 @@
     (start . (lambda (name) (format "systemctl start %s" name)))
     (stop . (lambda (name) (format "systemctl stop %s" name)))
     (restart . (lambda (name) (format "systemctl restart %s" name)))
-    (reload . (lambda (name) (format "systemctl reload %s" name))))
+    (reload . (lambda (name) (format "systemctl reload %s" name)))
+    (enable . (lambda (name) (format "systemctl enable %s" name)))
+    (disable . (lambda (name) (format "systemctl disable %s" name))))
 
   :list (daemons-systemd--list)
 

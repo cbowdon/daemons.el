@@ -32,6 +32,10 @@ The following commands are available for each daemon:
 | =daemons-stop=    | S                       |
 | =daemons-reload=  | r                       |
 | =daemons-restart= | R                       |
+| =daemons-enable=  | e                       |
+| =daemons-disable= | d                       |
+
+/Sorry I've only implemented =enable= and =disable= for systemd so far - raise an issue if you want support for your system!/
 
 Results of commands are displayed in a =special-mode= buffer, in which the same commands are available for the selected daemon. So you can (for example) keep reloading the same daemon with =r= without having to re-select it.
 
@@ -100,7 +104,9 @@ To extend =daemons= to support another init system, there are two steps:
       (start . (lambda (name) (format "ex-sys start %s" name)))
       (stop . (lambda (name) (format "ex-sys stop %s" name)))
       (reload . (lambda (name) (format "ex-sys reload %s" name)))
-      (restart . (lambda (name) (format "ex-sys restart %s" name))))
+      (restart . (lambda (name) (format "ex-sys restart %s" name)))
+      (enable . (lambda (name) (format "ex-sys enable %s" name)))
+      (disable . (lambda (name) (format "ex-sys disable %s" name))))
 
     ;; This is expression to get the daemons list (see `daemons--list'):
     :list
