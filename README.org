@@ -66,6 +66,14 @@ Please see =M-x customize-mode=.
 
 ** Troubleshooting
 
+Note that the MELPA Stable release is updated very conservatively, so if you have any problem that can't be solved by the below advice, please try reverting the stable version, e.g.:
+
+#+BEGIN_SRC emacs-lisp
+  (use-package daemons :pin melpa-stable)
+#+END_SRC
+
+Of course also feel free to raise an issue or submit a PR. :-)
+
 *** Sudo permissions
 
 If you are having trouble with permissions for SysV or GNU Shepherd then setting the =daemons-always-sudo= custom variable may be what you need.
