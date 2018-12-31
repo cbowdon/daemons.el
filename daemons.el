@@ -345,12 +345,12 @@ This opens a ‘daemons-mode’ list buffer.  Move the cursor to a daemon line a
 execute one of the commands in `describe-mode' to show status and manage the
 state of the daemon."
   (interactive)
+  (when daemons-always-sudo (daemons--sudo))
   (let* ((hostname (daemons--get-user-and-hostname default-directory))
          (list-buffer (get-buffer-create (daemons--get-list-buffer-name hostname))))
     (with-current-buffer list-buffer
       (display-buffer-pop-up-window list-buffer nil)
       (switch-to-buffer-other-window list-buffer)
-      (when daemons-always-sudo (daemons--sudo))
       (daemons-mode)
       (daemons--refresh-list)
       (tabulated-list-print t t))))
