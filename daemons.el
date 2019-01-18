@@ -245,7 +245,7 @@ system you need to specify your own TRAMP path with a privileged user.
 
 e.g. /ssh:me@example.com|sudo:example.com:"
   (unless (daemons--using-tramp-path-p default-directory)
-    (let ((tempdir (daemons--shell-command-to-string "mktemp -d")))
+    (let ((tempdir (string-trim (daemons--shell-command-to-string "mktemp -d"))))
       (cd (format "/sudo::%s" tempdir)))))
 
 (defun daemons--refresh-list ()
