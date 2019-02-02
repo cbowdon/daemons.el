@@ -69,6 +69,11 @@ sure it is on your load path.
 See `daemons-define-submodule' for how to implement your own."
   :type '(repeat symbol))
 
+(defcustom daemons-list-fill-frame nil
+  "Controls whether the daemons list window fills its frame."
+  :type 'boolean
+  :group 'daemons)
+
 ;; declarations
 (defvar daemons--shell-command-fun 'shell-command
   "Contains a `shell-command' function.
@@ -353,7 +358,8 @@ state of the daemon."
       (switch-to-buffer-other-window list-buffer)
       (daemons-mode)
       (daemons--refresh-list)
-      (tabulated-list-print t t))))
+      (tabulated-list-print t t))
+    (when daemons-list-fill-frame (delete-other-windows))))
 
 ;; macros
 (defmacro daemons-define-submodule (name docstring &rest forms)
