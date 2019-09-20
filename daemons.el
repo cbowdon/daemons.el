@@ -54,7 +54,8 @@ Security wise - off is safer of course, to avoid unnecessary privilege."
   :type 'boolean
   :group 'daemons)
 
-(defcustom daemons-init-system-submodules '(daemons-systemd
+(defcustom daemons-init-system-submodules '(daemons-openrc
+					    daemons-systemd
                                             daemons-sysvinit
                                             daemons-brew
                                             daemons-shepherd)
