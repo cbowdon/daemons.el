@@ -54,11 +54,11 @@ Security wise - off is safer of course, to avoid unnecessary privilege."
   :type 'boolean
   :group 'daemons)
 
-(defcustom daemons-init-system-submodules '(daemons-openrc
-					    daemons-systemd
+(defcustom daemons-init-system-submodules '(daemons-systemd
                                             daemons-sysvinit
                                             daemons-brew
-                                            daemons-shepherd)
+                                            daemons-shepherd
+					    daemons-openrc)
   "List of available init system submodules for `daemons'.
 When running `daemons' each of these will be `required'd and the \"test\" form
 in each will be evaluated to determine if it is the right backend to use for
