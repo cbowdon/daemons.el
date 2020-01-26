@@ -31,7 +31,9 @@
   '((status . (lambda (name) (format "herd status %s" name)))
     (start . (lambda (name) (format "herd start %s" name)))
     (stop . (lambda (name) (format "herd stop %s" name)))
-    (restart . (lambda (name) (format "herd restart %s" name))))
+    (restart . (lambda (name) (format "herd restart %s" name)))
+    (enable . (lambda (name) (format "herd enable %s" name)))
+    (disable . (lambda (name) (format "herd disable %s" name))))
 
   :list (daemons-shepherd--list)
 
