@@ -22,30 +22,19 @@
 (require 'seq)
 (require 'daemons)
 
-(defcustom daemons-systemd-is-user nil
-  "Determines if we want to run commands as `--user'"
-  :type 'boolean
-  :group 'daemons)
-
-(defun daemons-systemd--cmd ()
-  "Appends `--user' to the `systemctl' call if `daemons-systemd-is-user' is set"
-  (if daemons-systemd-is-user
-      "systemctl --user"
-    "systemctl"))
-
 (daemons-define-submodule daemons-systemd
   "Daemons submodule for systemd."
 
   :test (and (eq system-type 'gnu/linux)
              (equal 0 (daemons--shell-command "which systemctl")))
   :commands
-  '((status . (lambda (name) (format "%s status %s" (daemons-systemd--cmd) name)))
-    (start . (lambda (name) (format "%s start %s" (daemons-systemd--cmd) name)))
-    (stop . (lambda (name) (format "%s stop %s" (daemons-systemd--cmd) name)))
-    (restart . (lambda (name) (format "%s restart %s" (daemons-systemd--cmd) name)))
-    (reload . (lambda (name) (format "%s reload %s" (daemons-systemd--cmd) name)))
-    (enable . (lambda (name) (format "%s enable %s" (daemons-systemd--cmd) name)))
-    (disable . (lambda (name) (format "%s disable %s" (daemons-systemd--cmd) name))))
+  '((status . (lambda (name) (format "systemctl status %s" name)))
+    (start . (lambda (name) (format "systemctl start %s" name)))
+    (stop . (lambda (name) (format "systemctl stop %s" name)))
+    (restart . (lambda (name) (format "systemctl restart %s" name)))
+    (reload . (lambda (name) (format "systemctl reload %s" name)))
+    (enable . (lambda (name) (format "systemctl enable %s" name)))
+    (disable . (lambda (name) (format "systemctl disable %s" name))))
 
   :list (daemons-systemd--list)
 
@@ -64,17 +53,11 @@
 
 (defun daemons-systemd--list ()
   "Return a list of daemons on a systemd system."
-  (thread-last  (format "%s list-unit-files --type=service --no-legend" (daemons-systemd--cmd))
+  (thread-last  "systemctl list-unit-files --type=service --no-legend"
     (daemons--shell-command-to-string)
     (daemons--split-lines)
     (seq-map 'daemons-systemd--parse-list-item)
     (seq-filter 'daemons-systemd--item-is-simple-service-p)))
-
-(defun daemons-systemd-toggle-user ()
-  "Toggle showing of user services"
-  (interactive)
-  (setq daemons-systemd-is-user (not daemons-systemd-is-user))
-  (revert-buffer))
 
 (provide 'daemons-systemd)
 ;;; daemons-systemd.el ends here
