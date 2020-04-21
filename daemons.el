@@ -98,6 +98,7 @@ Override this to your own value for mocking out shell calls in tests.")
     (define-key map (kbd "r") 'daemons-reload-at-point)
     (define-key map (kbd "e") 'daemons-enable-at-point)
     (define-key map (kbd "d") 'daemons-disable-at-point)
+    (define-key map (kbd "u") 'daemons-systemd-toggle-user)
     map)
   "Keymap for daemons mode.")
 
