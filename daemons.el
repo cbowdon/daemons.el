@@ -76,6 +76,11 @@ See `daemons-define-submodule' for how to implement your own."
   :type 'boolean
   :group 'daemons)
 
+(defcustom daemons-show-output-in-minibuffer nil
+  "If non-nil, all output will be shown in the minibuffer."
+  :type 'boolean
+  :group 'daemons)
+
 ;; declarations
 (defvar daemons--shell-command-fun 'shell-command
   "Contains a `shell-command' function.
@@ -165,8 +170,10 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
 (defun daemons--switch-output-buffer-create (hostname)
   "Switch to output buffer for HOSTNAME if it exists, else create it and switch."
   (let ((output-buffer-name (daemons--get-output-buffer-name hostname)))
-    (when (not (equal (buffer-name) output-buffer-name))
-      (switch-to-buffer-other-window output-buffer-name))))
+    (if daemons-show-output-in-minibuffer
+        (message "%s" (with-current-buffer output-buffer-name (buffer-string)))
+      (when (not (equal (buffer-name) output-buffer-name))
+        (switch-to-buffer-other-window output-buffer-name)))))
 
 (defun daemons--run-with-output-buffer (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
