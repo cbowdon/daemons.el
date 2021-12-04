@@ -53,7 +53,8 @@
   (thread-last "brew services list"
     (daemons--shell-command-to-string)
     (daemons--split-lines)
-    (cdr)
+    (seq-drop-while (lambda (s) (not (string-match-p "^Name\\W+Status\\W+User\\W+File" s))))
+    (rest)
     (seq-map 'daemons-brew--parse-list-item)))
 
 (defun daemons-brew--list-headers ()
