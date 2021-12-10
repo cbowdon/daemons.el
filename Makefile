@@ -12,3 +12,12 @@ $(PACKAGE_NAME).tar: clean $(FILES)
 clean:
 	rm -f $(PACKAGE_NAME).tar
 	rm -rf $(PACKAGE_NAME)
+	rm -rf .cask
+
+compile: cask
+	! (cask eval "(let ((byte-compile-error-on-warn t)) \
+	                 (cask-cli/build))" 2>&1 \
+	   | egrep -a "(Warning|Error):") ; \
+	  (ret=$$? ; cask clean-elc && exit $$ret)
+
+.PHONY: compile
