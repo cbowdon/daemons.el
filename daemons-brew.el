@@ -54,7 +54,7 @@
     (daemons--shell-command-to-string)
     (daemons--split-lines)
     (seq-drop-while (lambda (s) (not (string-match-p "^Name\\W+Status\\W+User\\W+File" s))))
-    (rest)
+    (cdr)
     (seq-map 'daemons-brew--parse-list-item)))
 
 (defun daemons-brew--list-headers ()
