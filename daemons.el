@@ -13,7 +13,7 @@
 ;; Modified: December 15, 2018
 ;; Version: 2.1.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (s "1.13.0"))
 ;;
 ;;; Commentary:
 ;; A UI for managing init system daemons (services).
@@ -31,6 +31,7 @@
 ;;; Code:
 (require 'seq)
 (require 'map)
+(require 'tramp)
 
 ;; Fix for Emacs 27 byte compilation errors relating to thread-last. See:
 ;; https://github.com/cbowdon/daemons.el/issues/10#issuecomment-392261477
@@ -158,7 +159,8 @@ ARGS are passed to the underlying function."
 
 (defun daemons--daemon-at-point ()
   "Return the id of the daemon of the current line if in the list buffer.
-Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons--run’)."
+Otherwise, return the value of ‘daemons--current-id’ variable (set by
+‘daemons--run’)."
   (if (derived-mode-p 'tabulated-list-mode)
       (tabulated-list-get-id)
     daemons--current-id))
@@ -178,7 +180,8 @@ Otherwise, return value of ‘daemons--current-id’ variable (set by ‘daemons
 (defun daemons--run-with-output-buffer (command daemon-name)
   "Run the given COMMAND on DAEMON-NAME.  Show results in an output buffer.
 
-The output buffer is in `daemons-output-mode' and will be switched to if not active."
+The output buffer is in `daemons-output-mode' and will be switched to if not
+active."
   (let ((hostname (daemons--get-user-and-hostname default-directory)))
     (with-current-buffer (get-buffer-create (daemons--get-output-buffer-name hostname))
       (setq buffer-read-only nil
@@ -191,7 +194,8 @@ The output buffer is in `daemons-output-mode' and will be switched to if not act
     (daemons--switch-output-buffer-create hostname)))
 
 (defun daemons--run (command daemon-name)
-  "Run the given COMMAND on DAEMON-NAME.  Insert the results into the current buffer."
+  "Run the given COMMAND on DAEMON-NAME.
+The results will be inserted into the current buffer."
   (let ((command-fun (daemons--command command (daemons-init-system-submodule))))
     (when (not command-fun)
       (error "No such daemon command: %s" command))
@@ -237,11 +241,11 @@ The results will correspond to the format of each item in `daemons--list'."
 (defun daemons--commands-alist (submodule-name)
   "Get the daemons commands alist for SUBMODULE-NAME.
 
-The car of each pair is the command symbol (e.g. 'stop).
+The car of each pair is the command symbol (e.g. \\='stop).
 The cdr of each pair is a function taking a daemon name and returning a shell
 command to execute.
 
-e.g. '((start . (lambda (x) (format \"service %s start\" x)))
+e.g. \\='((start . (lambda (x) (format \"service %s start\" x)))
        (stop . (lambda (x) (format \"service %s stop\" x))))"
   (let  ((submodule (daemons--get-submodule submodule-name)))
     (plist-get submodule :commands)))
@@ -381,7 +385,7 @@ FORMS begins with a plist with these properties:
         appropriate for this system
 
         This could be something like:
-        (and (eq system-type 'gnu/linux)
+        (and (eq system-type \\='gnu/linux)
              (eq 0 (daemons--shell-command \"which service\")))
 
 :commands - An alist of user commands (see `daemons--commands-alist')

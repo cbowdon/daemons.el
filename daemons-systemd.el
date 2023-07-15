@@ -59,7 +59,8 @@
     (list name (vector name enabled))))
 
 (defun daemons-systemd--item-is-simple-service-p (item)
-  "Non-nil if ITEM (output of `daemons-systemd--parse-list-item') is not a template service."
+  "Return non-nil if ITEM is not a template service.
+ITEM should correspond to the output type of `daemons-systemd--parse-list-item'."
   (not (string-match-p "@$" (car item))))
 
 (defun daemons-systemd--list ()
