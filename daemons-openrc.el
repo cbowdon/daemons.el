@@ -21,6 +21,7 @@
 ;;; Code:
 (require 'seq)
 (require 'daemons)
+(require 's)
 
 (daemons-define-submodule daemons-openrc
   "Daemons submodule for OpenRC."
