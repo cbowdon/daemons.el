@@ -13,7 +13,7 @@
 ;; Modified: December 15, 2018
 ;; Version: 2.1.0
 ;; Keywords: unix convenience
-;; Package-Requires: ((emacs "25.1") (s "1.13.0"))
+;; Package-Requires: ((emacs "25.1") (s "1.13.0") (compat "29.1.4.2"))
 ;;
 ;;; Commentary:
 ;; A UI for managing init system daemons (services).
@@ -32,6 +32,7 @@
 (require 'seq)
 (require 'map)
 (require 'tramp)
+(require 'eldoc)
 
 ;; Fix for Emacs 27 byte compilation errors relating to thread-last. See:
 ;; https://github.com/cbowdon/daemons.el/issues/10#issuecomment-392261477
@@ -238,6 +239,11 @@ The results will correspond to the format of each item in `daemons--list'."
   (let ((submodule (daemons--get-submodule submodule-name)))
     (funcall (plist-get submodule :headers))))
 
+(defun daemons--eldoc-documentation-function (submodule-name)
+  "Return the documentatino function for SUBMODULE-NAME."
+  (let ((submodule (daemons--get-submodule submodule-name)))
+    (plist-get submodule :eldoc-documentation-function)))
+
 (defun daemons--commands-alist (submodule-name)
   "Get the daemons commands alist for SUBMODULE-NAME.
 
@@ -396,8 +402,8 @@ FORMS begins with a plist with these properties:
 
 The remainder of FORMS will be ignored."
   (declare (indent defun))
-  (let ((submodule-props-plist (seq-take forms 8)))
-    (when (or (not (equal 8 (length submodule-props-plist)))
+  (let ((submodule-props-plist (seq-take forms 10)))
+    (when (or (not (<= 8 (length submodule-props-plist)))
               (not (plist-member submodule-props-plist :test))
               (not (plist-member submodule-props-plist :commands))
               (not (plist-member submodule-props-plist :list))
@@ -409,17 +415,23 @@ The remainder of FORMS will be ignored."
                :test (lambda () ,(plist-get submodule-props-plist :test))
                :commands ,(plist-get submodule-props-plist :commands)
                :list (lambda () ,(plist-get submodule-props-plist :list))
-               :headers (lambda () ,(plist-get submodule-props-plist :headers))))))
+               :headers (lambda () ,(plist-get submodule-props-plist :headers))
+               :eldoc-documentation-function
+               ,(plist-get submodule-props-plist :eldoc-documentation-function)))))
 
 ;; mode definitions
 (define-derived-mode daemons-mode tabulated-list-mode
   "Daemons"
   "UI for viewing and controlling system daemons"
   :group 'daemons
-  (setq tabulated-list-format (daemons--list-headers (daemons-init-system-submodule))
-        tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook 'daemons--refresh-list)
-  (tabulated-list-init-header))
+  (let* ((submodule (daemons-init-system-submodule))
+         (eldoc-fn (daemons--eldoc-documentation-function submodule)))
+    (setq tabulated-list-format (daemons--list-headers submodule)
+          tabulated-list-padding 2)
+    (when eldoc-fn
+      (add-hook 'eldoc-documentation-functions eldoc-fn nil t))
+    (add-hook 'tabulated-list-revert-hook 'daemons--refresh-list)
+    (tabulated-list-init-header)))
 
 (define-derived-mode daemons-output-mode special-mode
   "Daemons Output"
