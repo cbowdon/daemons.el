@@ -27,11 +27,32 @@
   :type 'boolean
   :group 'daemons)
 
+(defcustom daemons-systemctl-command-fn #'daemons-systemctl-cmd
+  "Function used to return string systemctl commands suitable for `shell-command'.
+
+It should take two string input arguments, denoting the desired systemctl
+command, and the service to run the command with.
+
+The default value for this user option will respect the value of
+`daemons-systemd-is-user'.  In order to also do this for any custom value of
+this option, see the implementation of `daemons-systemd--cmd'."
+  :type 'function
+  :group 'daemons)
+
 (defun daemons-systemd--cmd ()
   "Appends `--user' to the `systemctl' call if `daemons-systemd-is-user' is set"
   (if daemons-systemd-is-user
       "systemctl --user"
     "systemctl"))
+
+(defun daemons-systemctl-cmd (command service)
+  "Return a string suitable for `shell-command' for COMMAND run with SERVICE.
+
+COMMAND should be a valid systemctl command, and SERVICE an existing systemd
+service.  Both should be strings.
+
+\"--user\" will be appended to the systemctl call if `daemons-systemd-is-user' is set."
+  (format "%s %s %s" (daemons-systemd--cmd) command service))
 
 (daemons-define-submodule daemons-systemd
   "Daemons submodule for systemd."
@@ -39,13 +60,13 @@
   :test (and (eq system-type 'gnu/linux)
              (equal 0 (daemons--shell-command "which systemctl")))
   :commands
-  '((status . (lambda (name) (format "%s status %s" (daemons-systemd--cmd) name)))
-    (start . (lambda (name) (format "%s start %s" (daemons-systemd--cmd) name)))
-    (stop . (lambda (name) (format "%s stop %s" (daemons-systemd--cmd) name)))
-    (restart . (lambda (name) (format "%s restart %s" (daemons-systemd--cmd) name)))
-    (reload . (lambda (name) (format "%s reload %s" (daemons-systemd--cmd) name)))
-    (enable . (lambda (name) (format "%s enable %s" (daemons-systemd--cmd) name)))
-    (disable . (lambda (name) (format "%s disable %s" (daemons-systemd--cmd) name))))
+  '((status . (lambda (name) (funcall daemons-systemctl-command-fn "status" name)))
+    (start . (lambda (name) (funcall daemons-systemctl-command-fn "start" name)))
+    (stop . (lambda (name) (funcall daemons-systemctl-command-fn "stop" name)))
+    (restart . (lambda (name) (funcall daemons-systemctl-command-fn "restart" name)))
+    (reload . (lambda (name) (funcall daemons-systemctl-command-fn "reload" name)))
+    (enable . (lambda (name) (funcall daemons-systemctl-command-fn "enable" name)))
+    (disable . (lambda (name) (funcall daemons-systemctl-command-fn "disable" name))))
 
   :list (daemons-systemd--list)
 
