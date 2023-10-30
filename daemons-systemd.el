@@ -45,6 +45,26 @@ this option, see the implementation of `daemons-systemd--cmd'."
       "systemctl --user"
     "systemctl"))
 
+(defun daemons--systemd-documentation-for (service)
+  "Return documentation for SERVICE."
+  (let* ((output (shell-command-to-string
+                  (format "systemctl show %s --no-pager" service)))
+         (lines (split-string output "\n"))
+         (prefix "Description=")
+         (desc (seq-find (lambda (s) (string-prefix-p prefix s)) lines)))
+    (when desc
+      (substring desc (length prefix)))))
+
+(defun daemons--systemd-eldoc-function (callback &rest _ignored)
+  "Document service at point by calling CALLBACK."
+  (when-let* ((maybe-service (thing-at-point 'symbol))
+              (line (thing-at-point 'line))
+              ((string= maybe-service (car (split-string (string-trim line)))))
+              (result (daemons--systemd-documentation-for maybe-service)))
+    (funcall callback result
+             :thing maybe-service
+             :face 'font-lock-variable-name-face)))
+
 (defun daemons-systemctl-cmd (command service)
   "Return a string suitable for `shell-command' for COMMAND run with SERVICE.
 
@@ -70,7 +90,9 @@ service.  Both should be strings.
 
   :list (daemons-systemd--list)
 
-  :headers [("Daemon (service)" 60 t) ("Enabled" 40 t)])
+  :headers [("Daemon (service)" 60 t) ("Enabled" 40 t)]
+
+  :eldoc-documentation-function #'daemons--systemd-eldoc-function)
 
 (defun daemons-systemd--parse-list-item (raw-systemctl-output)
   "Parse a single line from RAW-SYSTEMCTL-OUTPUT into a tabulated list item."

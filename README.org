@@ -65,6 +65,8 @@ If for some reason you are unable or prefer not to use MELPA, you can also do th
 
 Please see =M-x customize-mode=.
 
+For ~eldoc~ support (currently ~systemd~ only), you can use ~(add-hook 'daemons-mode-hook eldoc-mode)~.
+
 ** Troubleshooting
 
 Note that the MELPA Stable release is updated very conservatively, so if you have any problem that can't be solved by the below advice, please try reverting the stable version, e.g.:
