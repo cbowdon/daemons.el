@@ -39,6 +39,69 @@ this option, see the implementation of `daemons-systemd--cmd'."
   :type 'function
   :group 'daemons)
 
+(defcustom daemons-systemd-color nil
+  "If non-nil, colorize services in systemd buffers according to their statuses."
+  :type 'boolean
+  :group 'daemons)
+
+(defface daemons-systemd-enabled
+  '((((class color)) (:foreground "green")))
+  "Face used in systemd buffers for enabled services.")
+
+(defface daemons-systemd-disabled
+  '((((class color)) (:foreground "DimGrey")))
+  "Face used in systemd buffers for disabled services.")
+
+(defface daemons-systemd-alias
+  '((((class color)) (:foreground "cyan")))
+  "Face used in systemd buffers for alias services.")
+
+(defface daemons-systemd-linked
+  '((((class color)) (:foreground "cyan")))
+  "Face used in systemd buffers for linked services.")
+
+(defface daemons-systemd-masked
+  '((((class color)) (:foreground "LightCoral")))
+  "Face used in systemd buffers for masked services.")
+
+(defface daemons-systemd-static
+  '((((class color)) (:foreground "DimGrey" :italic t)))
+  "Face used in systemd buffers for static services.")
+
+(defface daemons-systemd-generated
+  '((((class color)) (:foreground "silver")))
+  "Face used in systemd buffers for generated services.")
+
+(defface daemons-systemd-indirect
+  '((((class color)) (:foreground "DimGrey")))
+  "Face used in systemd buffers for indirect services.")
+
+(defface daemons-systemd-transient
+  '((((class color)) (:foreground "DimGrey")))
+  "Face used in systemd buffers for transient services.")
+
+(defface daemons-systemd-bad
+  '((((class color)) (:foreground "red" :bold t)))
+  "Face used in systemd buffers for bad services.")
+
+(defun daemons-systemd--color (status string)
+  "Colorize STRING according to STATUS."
+  (cond ((null daemons-systemd-color) string)
+        ((or (string= status "enabled") (string= status "enabled-runtime"))
+         (propertize string 'font-lock-face 'daemons-systemd-enabled))
+        ((string= status "disabled") (propertize string 'font-lock-face 'daemons-systemd-disabled))
+        ((string= status "alias") (propertize string 'font-lock-face 'daemons-systemd-alias))
+        ((or (string= status "linked") (string= status "linked-runtime"))
+         (propertize string 'font-lock-face 'daemons-systemd-alias))
+        ((or (string= status "masked") (string= status "masked-runtime"))
+         (propertize string 'font-lock-face 'daemons-systemd-masked))
+        ((string= status "static") (propertize string 'font-lock-face 'daemons-systemd-static))
+        ((string= status "generated") (propertize string 'font-lock-face 'daemons-systemd-generated))
+        ((string= status "indirect") (propertize string 'font-lock-face 'daemons-systemd-indirect))
+        ((string= status "transient") (propertize string 'font-lock-face 'daemons-systemd-transient))
+        ((string= status "bad") (propertize string 'font-lock-face 'daemons-systemd-bad))
+        (t string)))
+
 (defun daemons-systemd--cmd ()
   "Appends `--user' to the `systemctl' call if `daemons-systemd-is-user' is set"
   (if daemons-systemd-is-user
@@ -98,8 +161,8 @@ service.  Both should be strings.
   "Parse a single line from RAW-SYSTEMCTL-OUTPUT into a tabulated list item."
   (let* ((parts (split-string raw-systemctl-output))
          (name (replace-regexp-in-string "\.service" "" (car parts)))
-         (enabled (cadr parts)))
-    (list name (vector name enabled))))
+         (status (cadr parts)))
+    (list name (vector (daemons-systemd--color status name) (daemons-systemd--color status status)))))
 
 (defun daemons-systemd--item-is-simple-service-p (item)
   "Return non-nil if ITEM is not a template service.
