@@ -46,13 +46,14 @@
          (running (car parts)))
     (list name (vector
                 name
-                (if (string-match-p "^\+" running)
-                    "started"
-                  "stopped")))))
+                (pcase (substring running nil 1)
+                  ("+" "started")
+                  ("*" "one-shot")
+                  ("-" "stopped"))))))
 
 (defun daemons-shepherd--item-is-service-p (item)
   "Non-nil if ITEM (output-line of `herd status root') describes a service."
-  (string-match-p "^ [\+\-] " item))
+  (string-match-p "^ [\+\-\\*] " item))
 
 (defun daemons-shepherd--list ()
   "Return a list of daemons on a shepherd system."
