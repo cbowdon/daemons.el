@@ -107,7 +107,7 @@ To extend =daemons= to support another init system, there are two steps:
     ;; This is an expression to evaluate that will return true if this submodule works on this system:
     :test
     (and (eq system-type 'gnu/linux)
-         (equal 0 (daemons--shell-command "which ex-sys")))
+         (executable-find "ex-sys"))
 
     ;; This is a map of user commands (see `daemons--commands-alist'):
     :commands
