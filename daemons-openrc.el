@@ -27,7 +27,7 @@
   "Daemons submodule for OpenRC."
 
   :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which rc-service")))
+             (executable-find "rc-service"))
   :commands
   '((status . (lambda (name) (format "rc-service %s status" name)))
     (start . (lambda (name) (format "rc-service %s start" name)))

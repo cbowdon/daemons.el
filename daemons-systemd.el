@@ -141,7 +141,7 @@ service.  Both should be strings.
   "Daemons submodule for systemd."
 
   :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which systemctl")))
+             (executable-find "systemctl"))
   :commands
   '((status . (lambda (name) (funcall daemons-systemctl-command-fn "status" name)))
     (start . (lambda (name) (funcall daemons-systemctl-command-fn "start" name)))
