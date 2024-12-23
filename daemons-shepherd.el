@@ -26,7 +26,7 @@
   "Daemons submodule for GNU Shepherd."
 
   :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which herd")))
+             (executable-find "herd"))
   :commands
   '((status . (lambda (name) (format "herd status %s" name)))
     (start . (lambda (name) (format "herd start %s" name)))

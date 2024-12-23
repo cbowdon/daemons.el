@@ -26,7 +26,7 @@
   "Daemons submodule for SysVinit."
 
   :test (and (eq system-type 'gnu/linux)
-             (equal 0 (daemons--shell-command "which service")))
+             (executable-find "service"))
   :commands
   '((status . (lambda (name) (format "service %s status" name)))
     (start . (lambda (name) (format "service %s start" name)))

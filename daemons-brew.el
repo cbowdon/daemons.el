@@ -27,7 +27,7 @@
   "Daemons submodule for brew services."
 
   :test (and (eq system-type 'darwin)
-             (equal 0 (daemons--shell-command "which brew")))
+             (executable-find "brew"))
 
   :commands
   '((status . (lambda (name) (format "brew services list %s" name)))

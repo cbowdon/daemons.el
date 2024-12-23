@@ -392,7 +392,7 @@ FORMS begins with a plist with these properties:
 
         This could be something like:
         (and (eq system-type \\='gnu/linux)
-             (eq 0 (daemons--shell-command \"which service\")))
+             (executable-find \"service\"))
 
 :commands - An alist of user commands (see `daemons--commands-alist')
 
