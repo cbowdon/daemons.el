@@ -109,7 +109,10 @@ Override this to your own value for mocking out shell calls in tests.")
     map)
   "Keymap for daemons mode.")
 
-(defvar daemons-output-mode-map (copy-keymap daemons-mode-map)
+(defvar daemons-output-mode-map
+  (let ((map (copy-keymap daemons-mode-map)))
+    (define-key map [remap revert-buffer] 'daemons-status-at-point)
+    map)
   "Keymap for daemons output mode.")
 
 ;; TODO this needs to become buffer-local
