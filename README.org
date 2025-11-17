@@ -36,7 +36,7 @@ The following commands are available for each daemon:
 | =daemons-enable=  | e                       |
 | =daemons-disable= | d                       |
 
-/Sorry I've only implemented =enable= and =disable= for systemd so far - raise an issue if you want support for your system!/
+/Sorry, =enable= and =disable= have only been implemented for systemd and GNU Shepherd so far - raise an issue if you want support for your system!/
 
 Results of commands are displayed in a =special-mode= buffer, in which the same commands are available for the selected daemon. So you can (for example) keep reloading the same daemon with =r= without having to re-select it.
 
