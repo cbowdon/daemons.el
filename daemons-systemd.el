@@ -192,7 +192,7 @@ commands working."
 
 (defconst daemons-systemd--status-font-lock-keywords
   '(("^ *\\(Loaded\\|Active\\):" 1 'daemons-systemd-label)
-    ("^ *Active: \\(active ([^)\n]*)\\)" 1 'daemons-systemd-enabled)
+    ("^ *Active: \\(active\\(?: ([^)\n]*)\\)?\\)" 1 'daemons-systemd-enabled)
     ("^ *Active: \\(failed\\(?: ([^)\n]*)\\)?\\|inactive (dead)\\)" 1 'daemons-systemd-bad)
     ("^ *Active: \\(maintenance\\(?: ([^)\n]*)\\)?\\)" 1 'daemons-systemd-bad)
     ("^ *Active: \\(\\(?:\\(?:de\\)?activating\\|reloading\\|refreshing\\)\\(?: ([^)\n]*)\\)?\\)"
@@ -206,7 +206,8 @@ commands working."
 (defun daemons-systemd--mark-journal-errors ()
   "Give journal lines of priority err and above `daemons-systemd-bad'.
 systemd starts the message of such a line with bold red; the journal
-follows the first empty line after the Active: line."
+follows the first empty line after the Active: line.  A bold line with a
+red unit name inside, as systemd logs notices, is not one of them."
   (save-excursion
     (goto-char (point-min))
     (when (and (re-search-forward "^ *Active:" nil t)
@@ -226,7 +227,8 @@ follows the first empty line after the Active: line."
   "Colour systemd output in the current `daemons-output-mode' buffer.
 Does nothing unless `daemons-systemd-color' is set."
   (when (and daemons-systemd-color
-             (eq (daemons-init-system-submodule) 'daemons-systemd))
+             ;; Not to break the mode if the init system cannot be found.
+             (eq (ignore-errors (daemons-init-system-submodule)) 'daemons-systemd))
     (let ((inhibit-read-only t))
       (daemons-systemd--mark-journal-errors)
       (daemons-systemd--strip-escapes))

@@ -160,3 +160,24 @@ Return the fontified buffer text and the command that was run."
       (goto-char (point-min))
       (search-forward (car case))
       (should (eq (cdr case) (get-text-property (1- (point)) 'face))))))
+
+(ert-deftest systemd-status-colours-bare-active-test ()
+  "A unit whose sub-state is its state, such as a target, prints a bare
+Active: active, which is coloured too."
+  (with-temp-buffer
+    (insert "     Active: active since Mon 2026-11-16 09:00:00 CET; 2 days ago\n")
+    (setq font-lock-defaults '(daemons-systemd--status-font-lock-keywords t))
+    (font-lock-ensure)
+    (goto-char (point-min))
+    (search-forward "active since")
+    (should (eq 'daemons-systemd-enabled
+                (get-text-property (- (point) (length " since") 1) 'face)))))
+
+(ert-deftest systemd-setup-output-without-init-system-test ()
+  "The output buffer still comes up if the init system cannot be found."
+  (let ((daemons-systemd-color t))
+    (cl-letf (((symbol-function 'daemons-init-system-submodule)
+               (lambda () (error "I'm sorry, your init system isn't supported yet!"))))
+      (with-temp-buffer
+        (daemons-output-mode)
+        (should (derived-mode-p 'daemons-output-mode))))))
