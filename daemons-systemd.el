@@ -40,7 +40,14 @@ this option, see the implementation of `daemons-systemd--cmd'."
   :group 'daemons)
 
 (defcustom daemons-systemd-color nil
-  "If non-nil, colorize services in systemd buffers according to their statuses."
+  "If non-nil, colorize services in systemd buffers according to their statuses.
+The status command then runs with SYSTEMD_COLORS=1 SYSTEMD_URLIFY=0, set
+by `env' right before systemctl, so that journal lines of priority err
+and above can be marked; see `daemons-systemd--status-cmd'.  With a
+custom `daemons-systemctl-command-fn' that wraps sudo, sudo then runs
+env: if sudoers allows only systemctl, leave this off.  Wrappers that
+pass no environment on, such as ssh or sh -c, keep the plain colours of
+the state but lose the marks on journal lines."
   :type 'boolean
   :group 'daemons)
 
@@ -83,6 +90,16 @@ this option, see the implementation of `daemons-systemd--cmd'."
 (defface daemons-systemd-bad
   '((((class color)) (:foreground "red" :bold t)))
   "Face used in systemd buffers for bad services.")
+
+(defface daemons-systemd-changing
+  '((((class color)) (:foreground "yellow")))
+  "Face used in systemd status output for units that are changing state."
+  :group 'daemons)
+
+(defface daemons-systemd-label
+  '((t (:inherit bold)))
+  "Face used in systemd status output for the Loaded: and Active: labels."
+  :group 'daemons)
 
 (defun daemons-systemd--color (status string)
   "Colorize STRING according to STATUS."
@@ -137,13 +154,96 @@ service.  Both should be strings.
 \"--user\" will be appended to the systemctl call if `daemons-systemd-is-user' is set."
   (format "%s %s %s" (daemons-systemd--cmd) command service))
 
+(defconst daemons-systemd--colour-vars "SYSTEMD_COLORS=1 SYSTEMD_URLIFY=0"
+  "Environment that makes systemctl colour its output.")
+
+(defconst daemons-systemd--systemctl-command-regexp
+  (let ((word "[^ \t;&|()]+"))
+    (concat
+     ;; The start of a command: of the string, or after ; & | or (.
+     "\\(?:\\`\\|[;&|(]\\)[ \t]*"
+     ;; Optional variable assignments, such as LC_ALL=C.
+     "\\(?:[A-Za-z_][A-Za-z0-9_]*=" "[^ \t;&|()]*" "[ \t]+\\)*"
+     ;; An optional sudo or doas with its options and their arguments.
+     "\\(?:\\(?:" word "/\\)?\\(?:sudo\\|doas\\)"
+     "\\(?:[ \t]+" word "\\)*?[ \t]+\\)?"
+     ;; systemctl itself, possibly with a directory, as a whole word.
+     "\\(\\(?:" word "/\\)?systemctl\\)\\(?:[ \t]\\|\\'\\)"))
+  "Regexp for a systemctl that runs as a command; group 1 is the systemctl.")
+
+(defun daemons-systemd--status-cmd (service)
+  "Return the shell command that shows the status of SERVICE.
+With `daemons-systemd-color', systemctl is asked for colours so that
+`daemons-systemd--mark-journal-errors' can find journal lines of priority
+err and above.  The variables are set by `env' right before the first
+systemctl that runs as a command, so they survive a wrapper such as sudo,
+which drops the caller's environment.  A systemctl elsewhere, such as an
+argument of `test -x', is left alone.  A command without such a systemctl
+gets them exported first, which keeps shell builtins and compound
+commands working."
+  (let ((cmd (funcall daemons-systemctl-command-fn "status" service))
+        (case-fold-search nil))
+    (cond ((not daemons-systemd-color) cmd)
+          ((string-match daemons-systemd--systemctl-command-regexp cmd)
+           (concat (substring cmd 0 (match-beginning 1))
+                   "env " daemons-systemd--colour-vars " "
+                   (substring cmd (match-beginning 1))))
+          (t (concat "export " daemons-systemd--colour-vars "; " cmd)))))
+
+(defconst daemons-systemd--status-font-lock-keywords
+  '(("^ *\\(Loaded\\|Active\\):" 1 'daemons-systemd-label)
+    ("^ *Active: \\(active\\(?: ([^)\n]*)\\)?\\)" 1 'daemons-systemd-enabled)
+    ("^ *Active: \\(failed\\(?: ([^)\n]*)\\)?\\|inactive (dead)\\)" 1 'daemons-systemd-bad)
+    ("^ *Active: \\(maintenance\\(?: ([^)\n]*)\\)?\\)" 1 'daemons-systemd-bad)
+    ("^ *Active: \\(\\(?:\\(?:de\\)?activating\\|reloading\\|refreshing\\)\\(?: ([^)\n]*)\\)?\\)"
+     1 'daemons-systemd-changing))
+  "Font-lock keywords for systemctl status output.")
+
+(defconst daemons-systemd--escape-regexp
+  "\e\\[[0-9;:]*m\\|\e]8;;[^\a\e\n]*\\(?:\a\\|\e\\\\\\)"
+  "Regexp for the SGR and hyperlink escapes in coloured systemctl output.")
+
+(defun daemons-systemd--mark-journal-errors ()
+  "Give journal lines of priority err and above `daemons-systemd-bad'.
+systemd starts the message of such a line with bold red; the journal
+follows the first empty line after the Active: line.  A bold line with a
+red unit name inside, as systemd logs notices, is not one of them."
+  (save-excursion
+    (goto-char (point-min))
+    (when (and (re-search-forward "^ *Active:" nil t)
+               (re-search-forward "^$" nil t))
+      (while (re-search-forward "^[^\e\n]*: \\(\e\\[0;1;31m\\)" nil t)
+        (put-text-property (match-beginning 1) (line-end-position)
+                           'font-lock-face 'daemons-systemd-bad)))))
+
+(defun daemons-systemd--strip-escapes ()
+  "Delete the escapes coloured systemctl output contains."
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward daemons-systemd--escape-regexp nil t)
+      (replace-match ""))))
+
+(defun daemons-systemd--setup-output ()
+  "Colour systemd output in the current `daemons-output-mode' buffer.
+Does nothing unless `daemons-systemd-color' is set."
+  (when (and daemons-systemd-color
+             ;; Not to break the mode if the init system cannot be found.
+             (eq (ignore-errors (daemons-init-system-submodule)) 'daemons-systemd))
+    (let ((inhibit-read-only t))
+      (daemons-systemd--mark-journal-errors)
+      (daemons-systemd--strip-escapes))
+    (setq-local font-lock-defaults
+                '(daemons-systemd--status-font-lock-keywords t))))
+
+(add-hook 'daemons-output-mode-hook #'daemons-systemd--setup-output)
+
 (daemons-define-submodule daemons-systemd
   "Daemons submodule for systemd."
 
   :test (and (eq system-type 'gnu/linux)
              (executable-find "systemctl"))
   :commands
-  '((status . (lambda (name) (funcall daemons-systemctl-command-fn "status" name)))
+  '((status . daemons-systemd--status-cmd)
     (start . (lambda (name) (funcall daemons-systemctl-command-fn "start" name)))
     (stop . (lambda (name) (funcall daemons-systemctl-command-fn "stop" name)))
     (restart . (lambda (name) (funcall daemons-systemctl-command-fn "restart" name)))

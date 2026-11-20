@@ -25,7 +25,8 @@
                         :test (lambda () t)
                         :commands nil
                         :list (lambda () nil)
-                        :headers (lambda () []))))
+                        :headers (lambda () [])
+                        :eldoc-documentation-function nil)))
     (daemons-define-submodule daemons-happy
       "Test: happy path submodule"
       :test t
@@ -65,15 +66,17 @@
 
 
 (ert-deftest daemons--command-test ()
-  (let ((expected  (lambda () "let's go already")))
-    (daemons-define-submodule daemons-command-test
-      "Test: commands submodule"
-      :test t
-      :commands '((stop . (lambda () "plz stop"))
-                    (start . (lambda () "let's go already")))
-      :headers []
-      :list nil)
-    (should (equal expected (daemons--command 'start 'daemons-command-test)))))
+  (daemons-define-submodule daemons-command-test
+    "Test: commands submodule"
+    :test t
+    :commands '((stop . (lambda () "plz stop"))
+                (start . (lambda () "let's go already")))
+    :headers []
+    :list nil)
+  ;; Compare what the command returns: from Emacs 30 an interpreted
+  ;; closure is not `equal' to the list it was written as.
+  (should (equal "let's go already"
+                 (funcall (daemons--command 'start 'daemons-command-test)))))
 
 (ert-deftest daemons--list-headers-test ()
   (let ((expected [("Daemon name" 80 t)

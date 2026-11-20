@@ -67,6 +67,8 @@ Please see =M-x customize-mode=.
 
 For ~eldoc~ support (currently ~systemd~ only), you can use ~(add-hook 'daemons-mode-hook eldoc-mode)~.
 
+For ~systemd~, setting =daemons-systemd-color= colours the service list by enabled state, and the status buffer by unit state (=active= green, =failed= and =inactive (dead)= red, =activating= / =deactivating= yellow). It also highlights the =Loaded:= and =Active:= labels and journal lines of priority =err= and above.
+
 ** Troubleshooting
 
 Note that the MELPA Stable release is updated very conservatively, so if you have any problem that can't be solved by the below advice, please try reverting the stable version, e.g.:
